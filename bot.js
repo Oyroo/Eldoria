@@ -178,6 +178,13 @@ client.on(Events.InteractionCreate, async interaction => {
 
     // /serverinfo
     else if (interaction.commandName === 'serverinfo') {
+        if (interaction.user.id !== process.env.OWNER_ID) {
+            return interaction.reply({
+                content: "❌ Tu n'as pas la permission d'utiliser cette commande.",
+                flags: MessageFlags.Ephemeral,
+            });
+        }
+
         const guild = interaction.guild;
         await guild.fetch();
 
@@ -201,56 +208,61 @@ client.on(Events.InteractionCreate, async interaction => {
         const iconURL = guild.iconURL({ size: 256, extension: 'png' })
             ?? 'https://cdn.discordapp.com/embed/avatars/0.png';
 
+        const boostBar = guild.premiumSubscriptionCount > 0
+            ? '🟨'.repeat(Math.min(guild.premiumSubscriptionCount, 14))
+            : '-';
+
         const container = new ContainerBuilder()
             .setAccentColor(0xd4a853)
+
+            // En-tête
             .addSectionComponents(
                 new SectionBuilder()
                     .addTextDisplayComponents(
-                        new TextDisplayBuilder()
-                            .setContent(`# ${guild.name}\n-# ID : \`${guild.id}\``)
+                        new TextDisplayBuilder().setContent(
+                            `# ${guild.name}\n` +
+                            `-# ${guild.id} · Créé le ${createdAt}`
+                        )
                     )
                     .setThumbnailAccessory(
                         new ThumbnailBuilder().setURL(iconURL)
                     )
             )
-            .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+
+            .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(1))
+
+            // Général
             .addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
-                    [
-                        `👑  **Propriétaire** : ${owner.user.username} (\`${owner.id}\`)`,
-                        `👥  **Membres** : ${guild.memberCount.toLocaleString('fr-FR')}`,
-                        `🎭  **Rôles** : ${roleCount}`,
-                        `📅  **Créé le** : ${createdAt}`,
-                        `🔐  **Vérification** : ${verification}`,
-                    ].join('\n')
+                    `-# GÉNÉRAL\n` +
+                    `👑 **${owner.user.username}** · 👥 **${guild.memberCount.toLocaleString('fr-FR')}** membres · 🎭 **${roleCount}** rôles\n` +
+                    `🔐 Vérification **${verification}**`
                 )
             )
-            .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+
+            .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(1))
+
+            // Salons
             .addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
-                    [
-                        `**Salons**`,
-                        `💬  Texte : **${textCount}**`,
-                        `🔊  Vocal : **${voiceCount}**`,
-                        `📋  Forum : **${forumCount}**`,
-                        `📁  Catégorie : **${catCount}**`,
-                    ].join('\n')
+                    `-# SALONS\n` +
+                    `💬 **${textCount}** texte  ·  🔊 **${voiceCount}** vocal  ·  📋 **${forumCount}** forum  ·  📁 **${catCount}** catégorie`
                 )
             )
-            .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+
+            .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(1))
+
+            // Boosts
             .addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
-                    [
-                        `**Boosts**`,
-                        `✨  Niveau : **${boostTier}**`,
-                        `🚀  Nombre : **${guild.premiumSubscriptionCount ?? 0}**`,
-                    ].join('\n')
+                    `-# BOOSTS — ${boostTier}\n` +
+                    `${boostBar} **${guild.premiumSubscriptionCount ?? 0}** boost${(guild.premiumSubscriptionCount ?? 0) > 1 ? 's' : ''}`
                 )
             );
 
         await interaction.reply({
             components: [container],
-            flags: MessageFlags.IsComponentsV2,
+            flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
         });
     }
 });
