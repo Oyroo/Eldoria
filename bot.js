@@ -178,12 +178,6 @@ client.on(Events.InteractionCreate, async interaction => {
 
     // /serverinfo
     else if (interaction.commandName === 'serverinfo') {
-        if (interaction.user.id !== process.env.OWNER_ID) {
-            return interaction.reply({
-                content: "❌ Tu n'as pas la permission d'utiliser cette commande.",
-                flags: MessageFlags.Ephemeral,
-            });
-        }
 
         const guild = interaction.guild;
         await guild.fetch();
