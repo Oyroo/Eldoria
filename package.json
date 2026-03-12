@@ -1,28 +1,17 @@
 {
   "dependencies": {
-<<<<<<< HEAD
-<<<<<<< HEAD
+
     "discord.js": "^14.25.1",
     "express": "^5.2.1"
-=======
-    "discord.js": "^14.25.1"
->>>>>>> 346e89497c16a99d9b7f23bb26ad838ce2d3d8fe
-=======
-    "discord.js": "^14.25.1"
->>>>>>> 346e89497c16a99d9b7f23bb26ad838ce2d3d8fe
+
   },
   "name": "eldoria-bot",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
+  "master": "bot.js",
+
   "devDependencies": {},
->>>>>>> 346e89497c16a99d9b7f23bb26ad838ce2d3d8fe
-=======
-  "devDependencies": {},
->>>>>>> 346e89497c16a99d9b7f23bb26ad838ce2d3d8fe
+
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
