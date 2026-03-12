@@ -2,42 +2,51 @@ const express = require("express");
 const app = express();
 
 app.get("/", (req, res) => {
-  res.send("Bot Eldoria running");
+    res.send("Bot Eldoria running");
 });
 
 app.listen(3000, () => {
-  console.log("Web server ready");
+    console.log("Web server ready");
 });
 
 const { Client, GatewayIntentBits, ChannelType, Events } = require('discord.js');
+const fs = require('fs');
+const path = require('path');
 const config = require('./config.json');
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages] });
+const client = new Client({
+    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages]
+});
 
 // Liste des tags avec emojis et modération
 const forumTags = [
-    { name: "Social", emoji: "💬", moderated: false },
-    { name: "Exploration", emoji: "🧭", moderated: false },
-    { name: "Combat", emoji: "⚔️", moderated: false },
-    { name: "Event", emoji: "🎉", moderated: true },
-    { name: "Ouvert", emoji: "🌍", moderated: false },
-    { name: "Sur Invitation", emoji: "📜", moderated: false },
-    { name: "Privé", emoji: "🔒", moderated: false },
-    { name: "En Cours", emoji: "🟢", moderated: false },
-    { name: "Pause", emoji: "⏸️", moderated: false },
-    { name: "Terminé", emoji: "✅", moderated: false }
+    { name: "Social",        emoji: "💬", moderated: false },
+    { name: "Exploration",   emoji: "🧭", moderated: false },
+    { name: "Combat",        emoji: "⚔️", moderated: false },
+    { name: "Event",         emoji: "🎉", moderated: true  },
+    { name: "Ouvert",        emoji: "🌍", moderated: false },
+    { name: "Sur Invitation",emoji: "📜", moderated: false },
+    { name: "Privé",         emoji: "🔒", moderated: false },
+    { name: "En Cours",      emoji: "🟢", moderated: false },
+    { name: "Pause",         emoji: "⏸️", moderated: false },
+    { name: "Terminé",       emoji: "✅", moderated: false }
 ];
 
-// Fonction pour recréer les salons forums (à appeler manuellement)
-async function recreateForums() {
-    const guild = await client.guilds.fetch(config.guildId);
+// Sauvegarde la config (pour persister les ajouts de salons)
+function saveConfig() {
+    fs.writeFileSync(path.join(__dirname, 'config.json'), JSON.stringify(config, null, 4));
+}
+
+// Recrée les salons texte en forums
+async function recreateForums(guild) {
+    const results = [];
 
     for (const channelId of config.textChannelsToConvert) {
         try {
             const channel = await guild.channels.fetch(channelId);
 
             if (!channel) {
-                console.log(`⚠️ Le salon ${channelId} est introuvable.`);
+                results.push(`⚠️ Salon \`${channelId}\` introuvable.`);
                 continue;
             }
 
@@ -51,7 +60,6 @@ async function recreateForums() {
             const oldCategory = channel.parentId || null;
 
             await channel.delete();
-            console.log(`🗑️ Salon supprimé : ${oldName}`);
 
             const forum = await guild.channels.create({
                 name: oldName,
@@ -69,29 +77,92 @@ async function recreateForums() {
             }));
             await forum.setAvailableTags(newTags);
 
-            console.log(`✅ Forum recréé : ${forum.name}`);
+            results.push(`✅ \`${oldName}\` → forum recréé`);
 
         } catch (err) {
-            console.error(`❌ Erreur pour le salon ${channelId}:`, err);
+            console.error(`Erreur pour le salon ${channelId}:`, err);
+            results.push(`❌ Erreur sur \`${channelId}\` : ${err.message}`);
         }
     }
 
-    console.log("✅ Tous les salons ont été recréés et configurés !");
+    return results;
 }
 
 // Quand le bot est prêt
-client.once('ready', () => {
-    console.log(`Connecté en tant que ${client.user.tag}!`);
+client.once(Events.ClientReady, () => {
+    console.log(`✅ Connecté en tant que ${client.user.tag}`);
 });
 
-// Exemple : on peut déclencher la recréation via une commande slash (optionnel)
+// Gestion des slash commands
 client.on(Events.InteractionCreate, async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
+    // /recreate_forums
     if (interaction.commandName === 'recreate_forums') {
-        await interaction.reply("🔄 Recréation des forums en cours...");
-        await recreateForums();
-        await interaction.followUp("✅ Tous les forums ont été recréés !");
+        if (!config.textChannelsToConvert.length) {
+            return interaction.reply({
+                content: '⚠️ Aucun salon configuré. Utilise `/add_channel` d\'abord.',
+                ephemeral: true
+            });
+        }
+
+        await interaction.deferReply();
+
+        const guild = interaction.guild;
+        const results = await recreateForums(guild);
+
+        await interaction.editReply(
+            `**Recréation terminée :**\n${results.join('\n')}`
+        );
+    }
+
+    // /list_channels
+    else if (interaction.commandName === 'list_channels') {
+        if (!config.textChannelsToConvert.length) {
+            return interaction.reply({
+                content: 'Aucun salon configuré pour la conversion.',
+                ephemeral: true
+            });
+        }
+
+        const list = config.textChannelsToConvert
+            .map(id => `• <#${id}> (\`${id}\`)`)
+            .join('\n');
+
+        await interaction.reply({
+            content: `**Salons configurés pour la conversion :**\n${list}`,
+            ephemeral: true
+        });
+    }
+
+    // /add_channel
+    else if (interaction.commandName === 'add_channel') {
+        const channelId = interaction.options.getString('channel_id');
+
+        if (config.textChannelsToConvert.includes(channelId)) {
+            return interaction.reply({
+                content: `⚠️ Le salon \`${channelId}\` est déjà dans la liste.`,
+                ephemeral: true
+            });
+        }
+
+        // Vérifie que le salon existe bien
+        try {
+            await interaction.guild.channels.fetch(channelId);
+        } catch {
+            return interaction.reply({
+                content: `❌ Salon \`${channelId}\` introuvable sur ce serveur.`,
+                ephemeral: true
+            });
+        }
+
+        config.textChannelsToConvert.push(channelId);
+        saveConfig();
+
+        await interaction.reply({
+            content: `✅ Salon <#${channelId}> ajouté à la liste de conversion.`,
+            ephemeral: true
+        });
     }
 });
 
