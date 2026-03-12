@@ -179,6 +179,8 @@ client.on(Events.InteractionCreate, async interaction => {
     // /serverinfo
     else if (interaction.commandName === 'serverinfo') {
 
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
         const guild = interaction.guild;
         await guild.fetch();
 
@@ -254,9 +256,9 @@ client.on(Events.InteractionCreate, async interaction => {
                 )
             );
 
-        await interaction.reply({
+        await interaction.editReply({
             components: [container],
-            flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+            flags: MessageFlags.IsComponentsV2,
         });
     }
 });
