@@ -9,7 +9,18 @@ app.listen(3000, () => {
     console.log("Web server ready");
 });
 
-const { Client, GatewayIntentBits, ChannelType, Events } = require('discord.js');
+const {
+    Client,
+    GatewayIntentBits,
+    ChannelType,
+    Events,
+    MessageFlags,
+    ContainerBuilder,
+    TextDisplayBuilder,
+    SeparatorBuilder,
+    SectionBuilder,
+    ThumbnailBuilder,
+} = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 const config = require('./config.json');
@@ -162,6 +173,84 @@ client.on(Events.InteractionCreate, async interaction => {
         await interaction.reply({
             content: `✅ Salon <#${channelId}> ajouté à la liste de conversion.`,
             ephemeral: true
+        });
+    }
+
+    // /serverinfo
+    else if (interaction.commandName === 'serverinfo') {
+        const guild = interaction.guild;
+        await guild.fetch();
+
+        const owner = await guild.fetchOwner();
+        const channels = guild.channels.cache;
+
+        const textCount  = channels.filter(c => c.type === ChannelType.GuildText).size;
+        const voiceCount = channels.filter(c => c.type === ChannelType.GuildVoice).size;
+        const forumCount = channels.filter(c => c.type === ChannelType.GuildForum).size;
+        const catCount   = channels.filter(c => c.type === ChannelType.GuildCategory).size;
+        const roleCount  = guild.roles.cache.size - 1;
+
+        const createdAt = `<t:${Math.floor(guild.createdTimestamp / 1000)}:D>`;
+
+        const verificationLabels = { 0: 'Aucune', 1: 'Faible', 2: 'Moyenne', 3: 'Élevée', 4: 'Très élevée' };
+        const verification = verificationLabels[guild.verificationLevel] ?? 'Inconnue';
+
+        const boostTierLabels = { 0: 'Aucun', 1: 'Niveau 1', 2: 'Niveau 2', 3: 'Niveau 3' };
+        const boostTier = boostTierLabels[guild.premiumTier] ?? 'Inconnu';
+
+        const iconURL = guild.iconURL({ size: 256, extension: 'png' })
+            ?? 'https://cdn.discordapp.com/embed/avatars/0.png';
+
+        const container = new ContainerBuilder()
+            .setAccentColor(0xd4a853)
+            .addSectionComponents(
+                new SectionBuilder()
+                    .addTextDisplayComponents(
+                        new TextDisplayBuilder()
+                            .setContent(`# ${guild.name}\n-# ID : \`${guild.id}\``)
+                    )
+                    .setThumbnailAccessory(
+                        new ThumbnailBuilder().setURL(iconURL)
+                    )
+            )
+            .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+            .addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(
+                    [
+                        `👑  **Propriétaire** : ${owner.user.username} (\`${owner.id}\`)`,
+                        `👥  **Membres** : ${guild.memberCount.toLocaleString('fr-FR')}`,
+                        `🎭  **Rôles** : ${roleCount}`,
+                        `📅  **Créé le** : ${createdAt}`,
+                        `🔐  **Vérification** : ${verification}`,
+                    ].join('\n')
+                )
+            )
+            .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+            .addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(
+                    [
+                        `**Salons**`,
+                        `💬  Texte : **${textCount}**`,
+                        `🔊  Vocal : **${voiceCount}**`,
+                        `📋  Forum : **${forumCount}**`,
+                        `📁  Catégorie : **${catCount}**`,
+                    ].join('\n')
+                )
+            )
+            .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+            .addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(
+                    [
+                        `**Boosts**`,
+                        `✨  Niveau : **${boostTier}**`,
+                        `🚀  Nombre : **${guild.premiumSubscriptionCount ?? 0}**`,
+                    ].join('\n')
+                )
+            );
+
+        await interaction.reply({
+            components: [container],
+            flags: MessageFlags.IsComponentsV2,
         });
     }
 });

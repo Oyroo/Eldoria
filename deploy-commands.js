@@ -21,6 +21,11 @@ const commands = [
                 .setRequired(true)
         )
         .setDefaultMemberPermissions('8'),
+
+    new SlashCommandBuilder()
+        .setName('serverinfo')
+        .setDescription('Affiche les informations du serveur'),
+
 ].map(cmd => cmd.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
