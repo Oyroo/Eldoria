@@ -27,31 +27,32 @@ module.exports = {
             .addSectionComponents(
                 new SectionBuilder()
                     .addTextDisplayComponents(
-                        new TextDisplayBuilder().setContent(`# ${guild.name}\n-# ID : \`${guild.id}\``)
+                        new TextDisplayBuilder().setContent(`# 🌐 ${guild.name}\n-# Identifiant : \`${guild.id}\``)
                     )
                     .setThumbnailAccessory(new ThumbnailBuilder().setURL(iconURL))
             )
             .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
             .addTextDisplayComponents(new TextDisplayBuilder().setContent([
-                `👑  **Propriétaire** : ${owner.user.username} (\`${owner.id}\`)`,
-                `👥  **Membres** : ${guild.memberCount.toLocaleString('fr-FR')}`,
-                `🎭  **Rôles** : ${guild.roles.cache.size - 1}`,
-                `📅  **Créé le** : <t:${Math.floor(guild.createdTimestamp / 1000)}:D>`,
-                `🔐  **Vérification** : ${verLabels[guild.verificationLevel] ?? 'Inconnue'}`,
+                `### 👑 Informations générales`,
+                `👑  **Propriétaire** : ${owner.user} (\`${owner.id}\`)`,
+                `👥  **Membres** : **${guild.memberCount.toLocaleString('fr-FR')}**`,
+                `🎭  **Rôles** : **${guild.roles.cache.size - 1}**`,
+                `📅  **Création du serveur** : <t:${Math.floor(guild.createdTimestamp / 1000)}:D>`,
+                `🔐  **Niveau de vérification** : **${verLabels[guild.verificationLevel] ?? 'Inconnue'}**`,
             ].join('\n')))
             .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
             .addTextDisplayComponents(new TextDisplayBuilder().setContent([
-                `**Salons**`,
-                `💬  Texte : **${ch.filter(c => c.type === ChannelType.GuildText).size}**`,
-                `🔊  Vocal : **${ch.filter(c => c.type === ChannelType.GuildVoice).size}**`,
-                `📋  Forum : **${ch.filter(c => c.type === ChannelType.GuildForum).size}**`,
-                `📁  Catégorie : **${ch.filter(c => c.type === ChannelType.GuildCategory).size}**`,
+                `### 📂 Salons`,
+                `💬  **Salons textuels** : **${ch.filter(c => c.type === ChannelType.GuildText).size}**`,
+                `🔊  **Salons vocaux** : **${ch.filter(c => c.type === ChannelType.GuildVoice).size}**`,
+                `📋  **Forums** : **${ch.filter(c => c.type === ChannelType.GuildForum).size}**`,
+                `📁  **Catégories** : **${ch.filter(c => c.type === ChannelType.GuildCategory).size}**`,
             ].join('\n')))
             .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
             .addTextDisplayComponents(new TextDisplayBuilder().setContent([
-                `**Boosts**`,
-                `✨  Niveau : **${bstLabels[guild.premiumTier] ?? 'Inconnu'}**`,
-                `🚀  Nombre : **${guild.premiumSubscriptionCount ?? 0}**`,
+                `### 🚀 Boosts du serveur`,
+                `✨  **Niveau actuel** : **${bstLabels[guild.premiumTier] ?? 'Inconnu'}**`,
+                `🚀  **Nombre de boosts** : **${guild.premiumSubscriptionCount ?? 0}**`,
             ].join('\n')));
 
         await interaction.editReply({
