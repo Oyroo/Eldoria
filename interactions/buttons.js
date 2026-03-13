@@ -223,7 +223,7 @@ async function handleButton(interaction) {
 
         // Remplacer le bouton Sauvegarder par une confirmation temporaire
         const confirmedRow = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId('cfg_back').setLabel('Retour').setEmoji('←').setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('cfg_back').setLabel('Retour').setEmoji('↩️').setStyle(ButtonStyle.Secondary),
             new ButtonBuilder().setCustomId(`cfg_save:${catKey}`).setLabel('Sauvegardé !').setEmoji('✅').setStyle(ButtonStyle.Success).setDisabled(true),
             new ButtonBuilder().setCustomId(`cfg_preview:${catKey}`).setLabel('Aperçu').setEmoji('👁️').setStyle(ButtonStyle.Secondary),
             new ButtonBuilder().setCustomId(`cfg_delete:${catKey}`).setLabel('Supprimer').setEmoji('🗑️').setStyle(ButtonStyle.Danger),
