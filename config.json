@@ -1,13 +1,7 @@
 {
-  "guildId": "1479878538453844061",
-  "textChannelsToConvert": [],
-  "ticketCategoryId": null,
-  "ticketTranscriptChannelId": null,
-  "ticketCounter": 0,
-  "ticketPanelConfig": {
-    "title": "🎫 Support Eldoria",
-    "description": "Clique sur le bouton ci-dessous pour ouvrir un ticket.\nNotre équipe te répondra dans les plus brefs délais.",
-    "color": 13936723,
-    "buttonLabel": "Créer un ticket"
-  }
+    "guildId": "1479878538453844061",
+    "textChannelsToConvert": [],
+    "ticketTranscriptChannelId": null,
+    "ticketCounter": 0,
+    "ticketCategories": {}
 }

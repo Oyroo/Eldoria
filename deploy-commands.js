@@ -14,9 +14,7 @@ const commands = [
     new SlashCommandBuilder()
         .setName('add_channel')
         .setDescription('Ajoute un salon à convertir en forum')
-        .addStringOption(option =>
-            option.setName('channel_id').setDescription("L'ID du salon texte à convertir").setRequired(true)
-        )
+        .addStringOption(o => o.setName('channel_id').setDescription("L'ID du salon texte à convertir").setRequired(true))
         .setDefaultMemberPermissions('8'),
 
     new SlashCommandBuilder()
@@ -24,39 +22,25 @@ const commands = [
         .setDescription('Affiche les informations du serveur'),
 
     new SlashCommandBuilder()
+        .setName('ticket-config')
+        .setDescription('Ouvre le panel de configuration des tickets')
+        .setDefaultMemberPermissions('8'),
+
+    new SlashCommandBuilder()
         .setName('ticket-panel')
-        .setDescription('Gestion du système de tickets')
+        .setDescription('Envoie un panel de tickets dans un salon')
         .setDefaultMemberPermissions('8')
-        .addSubcommand(sub =>
-            sub
-                .setName('send')
-                .setDescription('Personnalise et envoie le panel de tickets dans un salon')
-                .addChannelOption(option =>
-                    option
-                        .setName('salon')
-                        .setDescription('Salon où envoyer le panel')
-                        .addChannelTypes(ChannelType.GuildText)
-                        .setRequired(true)
-                )
+        .addStringOption(o =>
+            o.setName('categorie')
+                .setDescription('Catégorie de tickets à envoyer (autocomplete)')
+                .setRequired(true)
+                .setAutocomplete(true)   // ← liste dynamique depuis config.json
         )
-        .addSubcommand(sub =>
-            sub
-                .setName('config')
-                .setDescription('Configure le salon des transcripts et la catégorie des tickets')
-                .addChannelOption(option =>
-                    option
-                        .setName('transcript')
-                        .setDescription('Salon où envoyer les transcripts')
-                        .addChannelTypes(ChannelType.GuildText)
-                        .setRequired(false)
-                )
-                .addChannelOption(option =>
-                    option
-                        .setName('categorie')
-                        .setDescription('Catégorie où créer les tickets')
-                        .addChannelTypes(ChannelType.GuildCategory)
-                        .setRequired(false)
-                )
+        .addChannelOption(o =>
+            o.setName('salon')
+                .setDescription('Salon où envoyer le panel')
+                .addChannelTypes(ChannelType.GuildText)
+                .setRequired(true)
         ),
 
 ].map(cmd => cmd.toJSON());
@@ -66,10 +50,7 @@ const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
 (async () => {
     try {
         console.log('🔄 Enregistrement des slash commands...');
-        await rest.put(
-            Routes.applicationGuildCommands(process.env.CLIENT_ID, config.guildId),
-            { body: commands }
-        );
+        await rest.put(Routes.applicationGuildCommands(process.env.CLIENT_ID, config.guildId), { body: commands });
         console.log('✅ Slash commands enregistrées avec succès !');
     } catch (err) {
         console.error('❌ Erreur lors de l\'enregistrement :', err);
