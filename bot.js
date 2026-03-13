@@ -13,24 +13,30 @@ app.listen(3000, () => console.log('Web server ready'));
 
 client.commands = new Map();
 
-const commandFiles = fs.readdirSync(path.join(__dirname, 'commands')).filter(f => f.endsWith('.js'));
-for (const file of commandFiles) {
-    const command = require(`./commands/${file}`);
-    client.commands.set(command.data.name, command);
-    console.log(`📦 Commande chargée : ${command.data.name}`);
+const commandsPath = path.join(__dirname, 'commands');
+if (fs.existsSync(commandsPath)) {
+    const commandFiles = fs.readdirSync(commandsPath).filter(f => f.endsWith('.js'));
+    for (const file of commandFiles) {
+        const command = require(`./commands/${file}`);
+        client.commands.set(command.data.name, command);
+        console.log(`📦 Commande chargée : ${command.data.name}`);
+    }
 }
 
 // ─── Charger les événements ───────────────────────────────────────────────────
 
-const eventFiles = fs.readdirSync(path.join(__dirname, 'events')).filter(f => f.endsWith('.js'));
-for (const file of eventFiles) {
-    const event = require(`./events/${file}`);
-    if (event.once) {
-        client.once(event.name, (...args) => event.execute(...args));
-    } else {
-        client.on(event.name, (...args) => event.execute(...args));
+const eventsPath = path.join(__dirname, 'events');
+if (fs.existsSync(eventsPath)) {
+    const eventFiles = fs.readdirSync(eventsPath).filter(f => f.endsWith('.js'));
+    for (const file of eventFiles) {
+        const event = require(`./events/${file}`);
+        if (event.once) {
+            client.once(event.name, (...args) => event.execute(...args));
+        } else {
+            client.on(event.name, (...args) => event.execute(...args));
+        }
+        console.log(`⚡ Événement chargé : ${event.name}`);
     }
-    console.log(`⚡ Événement chargé : ${event.name}`);
 }
 
 // ─── Login ────────────────────────────────────────────────────────────────────

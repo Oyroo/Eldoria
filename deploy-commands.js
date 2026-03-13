@@ -6,11 +6,14 @@ const config = require('./config.json');
 
 const commands = [];
 
-const commandFiles = fs.readdirSync(path.join(__dirname, 'commands')).filter(f => f.endsWith('.js'));
-for (const file of commandFiles) {
-    const command = require(`./commands/${file}`);
-    commands.push(command.data.toJSON());
-    console.log(`📦 Commande lue : ${command.data.name}`);
+const commandsPath = path.join(__dirname, 'commands');
+if (fs.existsSync(commandsPath)) {
+    const commandFiles = fs.readdirSync(commandsPath).filter(f => f.endsWith('.js'));
+    for (const file of commandFiles) {
+        const command = require(`./commands/${file}`);
+        commands.push(command.data.toJSON());
+        console.log(`📦 Commande lue : ${command.data.name}`);
+    }
 }
 
 const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
