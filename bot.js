@@ -256,22 +256,22 @@ client.on(Events.InteractionCreate, async interaction => {
     else if (interaction.isChatInputCommand()) {
 
         if (interaction.commandName === 'recreate_forums') {
-            if (!config.textChannelsToConvert?.length) return interaction.reply({ content:'⚠️ Aucun salon configuré.', ephemeral:true });
+            if (!config.textChannelsToConvert?.length) return interaction.reply({ content:'⚠️ Aucun salon configuré.', flags: MessageFlags.Ephemeral });
             await interaction.deferReply();
             await interaction.editReply(`**Recréation terminée :**\n${(await recreateForums(interaction.guild)).join('\n')}`);
         }
 
         else if (interaction.commandName === 'list_channels') {
-            if (!config.textChannelsToConvert?.length) return interaction.reply({ content:'Aucun salon configuré.', ephemeral:true });
-            await interaction.reply({ content:`**Salons configurés :**\n${config.textChannelsToConvert.map(id=>`• <#${id}> (\`${id}\`)`).join('\n')}`, ephemeral:true });
+            if (!config.textChannelsToConvert?.length) return interaction.reply({ content:'Aucun salon configuré.', flags: MessageFlags.Ephemeral });
+            await interaction.reply({ content:`**Salons configurés :**\n${config.textChannelsToConvert.map(id=>`• <#${id}> (\`${id}\`)`).join('\n')}`, flags: MessageFlags.Ephemeral });
         }
 
         else if (interaction.commandName === 'add_channel') {
             const channelId = interaction.options.getString('channel_id');
-            if (config.textChannelsToConvert.includes(channelId)) return interaction.reply({ content:'⚠️ Déjà dans la liste.', ephemeral:true });
-            try { await interaction.guild.channels.fetch(channelId); } catch { return interaction.reply({ content:'❌ Salon introuvable.', ephemeral:true }); }
+            if (config.textChannelsToConvert.includes(channelId)) return interaction.reply({ content:'⚠️ Déjà dans la liste.', flags: MessageFlags.Ephemeral });
+            try { await interaction.guild.channels.fetch(channelId); } catch { return interaction.reply({ content:'❌ Salon introuvable.', flags: MessageFlags.Ephemeral }); }
             config.textChannelsToConvert.push(channelId); saveConfig();
-            await interaction.reply({ content:`✅ Salon <#${channelId}> ajouté.`, ephemeral:true });
+            await interaction.reply({ content:`✅ Salon <#${channelId}> ajouté.`, flags: MessageFlags.Ephemeral });
         }
 
         else if (interaction.commandName === 'serverinfo') {
@@ -327,10 +327,10 @@ client.on(Events.InteractionCreate, async interaction => {
             const channel = interaction.options.getChannel('salon');
 
             if (!config.ticketCategories[catKey])
-                return interaction.reply({ content:`❌ Catégorie \`${catKey}\` introuvable. Utilise \`/ticket-config\` pour voir les catégories disponibles.`, ephemeral:true });
+                return interaction.reply({ content:`❌ Catégorie \`${catKey}\` introuvable. Utilise \`/ticket-config\` pour voir les catégories disponibles.`, flags: MessageFlags.Ephemeral });
 
             await channel.send({ embeds:[buildTicketEmbed(catKey)], components:[buildTicketPanelRow(catKey)] });
-            await interaction.reply({ content:`✅ Panel **${config.ticketCategories[catKey].label}** envoyé dans <#${channel.id}>.`, ephemeral:true });
+            await interaction.reply({ content:`✅ Panel **${config.ticketCategories[catKey].label}** envoyé dans <#${channel.id}>.`, flags: MessageFlags.Ephemeral });
         }
     }
 
@@ -367,7 +367,7 @@ client.on(Events.InteractionCreate, async interaction => {
         else if (interaction.customId.startsWith('cfg_modal_edit:')) {
             const catKey = interaction.customId.split(':')[1];
             const cat    = config.ticketCategories[catKey];
-            if (!cat) return interaction.reply({ content:'❌ Catégorie introuvable.', ephemeral:true });
+            if (!cat) return interaction.reply({ content:'❌ Catégorie introuvable.', flags: MessageFlags.Ephemeral });
 
             cat.title       = interaction.fields.getTextInputValue('title');
             cat.description = interaction.fields.getTextInputValue('description');
@@ -387,36 +387,39 @@ client.on(Events.InteractionCreate, async interaction => {
         else if (interaction.customId.startsWith('cfg_modal_setcat:')) {
             const catKey  = interaction.customId.split(':')[1];
             const inputId = interaction.fields.getTextInputValue('category_id').trim();
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
             try {
                 const discordCat = await interaction.guild.channels.fetch(inputId);
                 if (discordCat.type !== ChannelType.GuildCategory)
-                    return interaction.reply({ content:'❌ Ce salon n\'est pas une catégorie Discord.', ephemeral:true });
+                    return interaction.editReply({ content:'❌ Ce salon n\'est pas une catégorie Discord.' });
                 config.ticketCategories[catKey].categoryId = inputId;
                 saveConfig();
-                await interaction.reply({ components:[buildConfigPanel()], flags:MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
-            } catch { await interaction.reply({ content:'❌ Catégorie Discord introuvable.', ephemeral:true }); }
+                await interaction.editReply({ components:[buildConfigPanel()], flags:MessageFlags.IsComponentsV2 });
+            } catch { await interaction.editReply({ content:'❌ Catégorie Discord introuvable.' }); }
         }
 
         // Envoyer un panel depuis le config
         else if (interaction.customId.startsWith('cfg_modal_send:')) {
             const catKey    = interaction.customId.split(':')[1];
             const channelId = interaction.fields.getTextInputValue('send_channel_id').trim();
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
             try {
                 const targetChannel = await interaction.guild.channels.fetch(channelId);
                 await targetChannel.send({ embeds:[buildTicketEmbed(catKey)], components:[buildTicketPanelRow(catKey)] });
-                await interaction.reply({ content:`✅ Panel **${config.ticketCategories[catKey].label}** envoyé dans <#${channelId}>.`, ephemeral:true });
-            } catch { await interaction.reply({ content:'❌ Impossible d\'envoyer dans ce salon.', ephemeral:true }); }
+                await interaction.editReply({ content:`✅ Panel **${config.ticketCategories[catKey].label}** envoyé dans <#${channelId}>.` });
+            } catch { await interaction.editReply({ content:'❌ Impossible d\'envoyer dans ce salon.' }); }
         }
 
         // Salon transcripts
         else if (interaction.customId === 'cfg_modal_transcript') {
             const channelId = interaction.fields.getTextInputValue('transcript_id').trim();
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
             try {
                 await interaction.guild.channels.fetch(channelId);
                 config.ticketTranscriptChannelId = channelId;
                 saveConfig();
-                await interaction.reply({ components:[buildConfigPanel()], flags:MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral });
-            } catch { await interaction.reply({ content:'❌ Salon introuvable.', ephemeral:true }); }
+                await interaction.editReply({ components:[buildConfigPanel()], flags:MessageFlags.IsComponentsV2 });
+            } catch { await interaction.editReply({ content:'❌ Salon introuvable.' }); }
         }
     }
 
@@ -457,7 +460,7 @@ client.on(Events.InteractionCreate, async interaction => {
         else if (interaction.customId.startsWith('cfg_edit:')) {
             const catKey = interaction.customId.split(':')[1];
             const cat    = config.ticketCategories[catKey];
-            if (!cat) return interaction.reply({ content:'❌ Catégorie introuvable.', ephemeral:true });
+            if (!cat) return interaction.reply({ content:'❌ Catégorie introuvable.', flags: MessageFlags.Ephemeral });
 
             const modal = new ModalBuilder().setCustomId(`cfg_modal_edit:${catKey}`).setTitle(`Modifier — ${cat.label}`);
             modal.addComponents(
@@ -473,7 +476,7 @@ client.on(Events.InteractionCreate, async interaction => {
         else if (interaction.customId.startsWith('cfg_setcat:')) {
             const catKey = interaction.customId.split(':')[1];
             const cat    = config.ticketCategories[catKey];
-            if (!cat) return interaction.reply({ content:'❌ Catégorie introuvable.', ephemeral:true });
+            if (!cat) return interaction.reply({ content:'❌ Catégorie introuvable.', flags: MessageFlags.Ephemeral });
 
             const modal = new ModalBuilder().setCustomId(`cfg_modal_setcat:${catKey}`).setTitle(`Catégorie Discord — ${cat.label}`);
             modal.addComponents(new ActionRowBuilder().addComponents(
@@ -487,7 +490,7 @@ client.on(Events.InteractionCreate, async interaction => {
         else if (interaction.customId.startsWith('cfg_send:')) {
             const catKey = interaction.customId.split(':')[1];
             const cat    = config.ticketCategories[catKey];
-            if (!cat) return interaction.reply({ content:'❌ Catégorie introuvable.', ephemeral:true });
+            if (!cat) return interaction.reply({ content:'❌ Catégorie introuvable.', flags: MessageFlags.Ephemeral });
 
             const modal = new ModalBuilder().setCustomId(`cfg_modal_send:${catKey}`).setTitle(`Envoyer — ${cat.label}`);
             modal.addComponents(new ActionRowBuilder().addComponents(
@@ -501,7 +504,7 @@ client.on(Events.InteractionCreate, async interaction => {
         else if (interaction.customId.startsWith('cfg_delete:')) {
             const catKey = interaction.customId.split(':')[1];
             const cat    = config.ticketCategories[catKey];
-            if (!cat) return interaction.reply({ content:'❌ Catégorie introuvable.', ephemeral:true });
+            if (!cat) return interaction.reply({ content:'❌ Catégorie introuvable.', flags: MessageFlags.Ephemeral });
 
             const label = cat.label;
             delete config.ticketCategories[catKey];
@@ -513,7 +516,7 @@ client.on(Events.InteractionCreate, async interaction => {
             });
 
             // Message de confirmation rapide (pas de moyen natif de toast dans CV2)
-            await interaction.followUp({ content:`🗑️ Catégorie **${label}** supprimée.`, ephemeral:true });
+            await interaction.followUp({ content:`🗑️ Catégorie **${label}** supprimée.`, flags: MessageFlags.Ephemeral });
         }
 
         // Salon transcripts
@@ -531,12 +534,12 @@ client.on(Events.InteractionCreate, async interaction => {
         else if (interaction.customId.startsWith('ticket_create:')) {
             const catKey = interaction.customId.split(':')[1];
             const cat    = config.ticketCategories[catKey];
-            if (!cat) return interaction.reply({ content:'❌ Cette catégorie de ticket n\'existe plus.', ephemeral:true });
+            if (!cat) return interaction.reply({ content:'❌ Cette catégorie de ticket n\'existe plus.', flags: MessageFlags.Ephemeral });
 
             const existing = Object.values(openTickets).find(t => t.userId === interaction.user.id);
-            if (existing) return interaction.reply({ content:`❌ Tu as déjà un ticket ouvert : <#${existing.channelId}>`, ephemeral:true });
+            if (existing) return interaction.reply({ content:`❌ Tu as déjà un ticket ouvert : <#${existing.channelId}>`, flags: MessageFlags.Ephemeral });
 
-            await interaction.deferReply({ ephemeral:true });
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
             config.ticketCounter = (config.ticketCounter||0) + 1;
             saveConfig();
@@ -580,7 +583,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
         else if (interaction.customId === 'ticket_claim') {
             const ticketInfo = openTickets[interaction.channelId];
-            if (!ticketInfo) return interaction.reply({ content:'❌ Ticket introuvable.', ephemeral:true });
+            if (!ticketInfo) return interaction.reply({ content:'❌ Ticket introuvable.', flags: MessageFlags.Ephemeral });
             ticketInfo.claimedBy = interaction.user.tag;
             saveTickets();
             await interaction.message.edit({ components:[buildTicketControlRow(true, interaction.user.tag)] });
@@ -589,7 +592,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
         else if (interaction.customId === 'ticket_close') {
             const ticketInfo = openTickets[interaction.channelId];
-            if (!ticketInfo) return interaction.reply({ content:'❌ Ticket introuvable.', ephemeral:true });
+            if (!ticketInfo) return interaction.reply({ content:'❌ Ticket introuvable.', flags: MessageFlags.Ephemeral });
 
             await interaction.reply({ content:'🔒 Fermeture en cours, génération du transcript...' });
 
@@ -629,7 +632,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
             } catch (err) {
                 console.error('Erreur fermeture ticket :', err);
-                await interaction.followUp({ content:`❌ Erreur : ${err.message}`, ephemeral:true });
+                await interaction.followUp({ content:`❌ Erreur : ${err.message}`, flags: MessageFlags.Ephemeral });
             }
         }
     }
