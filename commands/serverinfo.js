@@ -1,6 +1,7 @@
 const {
     SlashCommandBuilder, MessageFlags, ChannelType,
     ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, SectionBuilder, ThumbnailBuilder,
+    SeparatorSpacingSize,
 } = require('discord.js');
 
 module.exports = {
@@ -40,7 +41,7 @@ module.exports = {
                 `📅  **Création du serveur** : <t:${Math.floor(guild.createdTimestamp / 1000)}:D>`,
                 `🔐  **Niveau de vérification** : **${verLabels[guild.verificationLevel] ?? 'Inconnue'}**`,
             ].join('\n')))
-            .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+            .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
             .addTextDisplayComponents(new TextDisplayBuilder().setContent([
                 `### 📂 Salons`,
                 `💬  **Salons textuels** : **${ch.filter(c => c.type === ChannelType.GuildText).size}**`,
