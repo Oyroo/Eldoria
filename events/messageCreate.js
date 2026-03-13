@@ -14,12 +14,13 @@ module.exports = {
         if (!pending || message.guildId !== pending.guildId) return;
 
         const input = message.content.trim();
-
         try { await message.delete(); } catch {}
+
+        const icon = message.guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
 
         if (input.toLowerCase() === 'annuler') {
             delete pendingInputs[message.author.id];
-            const [container, actionRow] = buildCategoryPanel(pending.catKey);
+            const [container, actionRow] = buildCategoryPanel(pending.catKey, null, icon);
             await patchPanel(pending.token, pending.appId, [container, actionRow]);
             return;
         }
@@ -41,7 +42,6 @@ module.exports = {
             } catch {
                 errorMsg = 'Aucune catégorie Discord trouvée avec cet ID.';
             }
-
         } else if (pending.type === 'transcript') {
             try {
                 await message.guild.channels.fetch(resolvedId);
@@ -50,7 +50,6 @@ module.exports = {
             } catch {
                 errorMsg = 'Salon introuvable avec cet ID.';
             }
-
         } else if (pending.type === 'sendchan') {
             try {
                 const ch = await message.guild.channels.fetch(resolvedId);
@@ -63,8 +62,7 @@ module.exports = {
             }
         }
 
-        // Retour sur la page catégorie (avec erreur éventuelle)
-        const [container, actionRow] = buildCategoryPanel(pending.catKey, errorMsg);
+        const [container, actionRow] = buildCategoryPanel(pending.catKey, errorMsg, icon);
         await patchPanel(pending.token, pending.appId, [container, actionRow]);
     },
 };

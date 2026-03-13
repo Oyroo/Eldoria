@@ -1,5 +1,6 @@
 const {
     ContainerBuilder, TextDisplayBuilder, SeparatorBuilder,
+    SectionBuilder, ThumbnailBuilder,
     ActionRowBuilder, ButtonBuilder, ButtonStyle,
     EmbedBuilder,
 } = require('discord.js');
@@ -7,15 +8,14 @@ const {
 const { config }             = require('./config');
 const { colorInt, intToHex } = require('./helpers');
 
-// ─── Constantes visuelles ─────────────────────────────────────────────────────
+// ─── Constantes ───────────────────────────────────────────────────────────────
 
-const ACCENT      = 0xd4a853; // or Eldoria
-const ACCENT_WAIT = 0x5865f2; // blurple Discord pour l'attente
+const ACCENT      = 0xd4a853;
+const ACCENT_WAIT = 0x5865f2;
 
-// Barre de statut : icône selon si configuré ou non
 function statusIcon(value) { return value ? '🟢' : '🔴'; }
 
-// ─── Panel de ticket public (embed + bouton) ──────────────────────────────────
+// ─── Panel de ticket public ───────────────────────────────────────────────────
 
 function buildTicketEmbed(catKey) {
     const cat = config.ticketCategories[catKey];
@@ -38,71 +38,83 @@ function buildTicketOpenRow(catKey) {
 }
 
 // ─── Menu principal ───────────────────────────────────────────────────────────
+// guildIconURL : URL de l'icône du serveur (optionnel)
 
-function buildMainPanel() {
+function buildMainPanel(guildIconURL = null) {
     const cats    = config.ticketCategories;
     const catKeys = Object.keys(cats);
     const total   = catKeys.length;
 
     const container = new ContainerBuilder().setAccentColor(ACCENT);
 
-    // ── En-tête ───────────────────────────────────────────────────────────────
-    container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-            `# 🎫  Gestion des tickets\n` +
-            `-# ${total === 0 ? 'Aucune catégorie configurée' : `${total} catégorie${total > 1 ? 's' : ''} · Clique sur une catégorie pour la modifier`}`
-        )
-    );
+    // ── En-tête avec thumbnail ────────────────────────────────────────────────
+    if (guildIconURL) {
+        container.addSectionComponents(
+            new SectionBuilder()
+                .addTextDisplayComponents(
+                    new TextDisplayBuilder().setContent(
+                        `# 🎫  Gestion des tickets\n` +
+                        `-# ${total === 0
+                            ? 'Aucune catégorie — crée-en une pour commencer'
+                            : `${total} catégorie${total > 1 ? 's' : ''} configurée${total > 1 ? 's' : ''}`
+                        }`
+                    )
+                )
+                .setThumbnailAccessory(
+                    new ThumbnailBuilder().setURL(guildIconURL)
+                )
+        );
+    } else {
+        container.addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                `# 🎫  Gestion des tickets\n` +
+                `-# ${total === 0
+                    ? 'Aucune catégorie — crée-en une pour commencer'
+                    : `${total} catégorie${total > 1 ? 's' : ''} configurée${total > 1 ? 's' : ''}`
+                }`
+            )
+        );
+    }
 
     // ── Aucune catégorie ──────────────────────────────────────────────────────
     if (total === 0) {
         container
-            .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+            .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2))
             .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                [
-                    `### Pour commencer`,
-                    ``,
-                    `Crée ta première catégorie de tickets avec le bouton ci-dessous.`,
-                    `Chaque catégorie correspond à un type de demande (support, roleplay, signalement…)`,
-                    `et possède son propre embed, salon de tickets et salon de transcripts.`,
-                ].join('\n')
+                `Crée ta première catégorie de tickets ci-dessous.\n` +
+                `-# Chaque catégorie a son propre embed, ses permissions et son salon de transcripts.`
             ));
     }
 
-    // ── Liste des catégories ──────────────────────────────────────────────────
+    // ── Catégories ────────────────────────────────────────────────────────────
     for (const catKey of catKeys) {
         const c        = cats[catKey];
         const colorHex = typeof c.color === 'number' ? intToHex(c.color) : (c.color ?? '#5865f2');
-        const catRef   = c.categoryId          ? `<#${c.categoryId}>`          : '*Non définie*';
-        const tsRef    = c.transcriptChannelId ? `<#${c.transcriptChannelId}>` : '*Non défini*';
-
-        const catOk = statusIcon(c.categoryId);
-        const tsOk  = statusIcon(c.transcriptChannelId);
+        const catRef   = c.categoryId          ? `<#${c.categoryId}>`          : '—';
+        const tsRef    = c.transcriptChannelId ? `<#${c.transcriptChannelId}>` : '—';
 
         container
-            .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+            .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2))
             .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                [
-                    `### ${c.label}`,
-                    `${catOk} Catégorie Discord · ${catRef}`,
-                    `${tsOk} Transcripts · ${tsRef}`,
-                    `-# 🎨 \`${colorHex}\`  ·  🎫 *${c.buttonLabel}*`,
-                ].join('\n')
+                `### ${c.label}\n` +
+                `${statusIcon(c.categoryId)}  Catégorie Discord  ·  ${catRef}\n` +
+                `${statusIcon(c.transcriptChannelId)}  Transcripts  ·  ${tsRef}\n` +
+                `-# 🎨 \`${colorHex}\`  ·  🎫 *${c.buttonLabel}*`
             ))
             .addActionRowComponents(
                 new ActionRowBuilder().addComponents(
                     new ButtonBuilder()
                         .setCustomId(`cfg_open:${catKey}`)
-                        .setLabel(`Modifier ${c.label}`)
+                        .setLabel(`Modifier`)
                         .setEmoji('✏️')
                         .setStyle(ButtonStyle.Secondary),
                 )
             );
     }
 
-    // ── Pied de panel ─────────────────────────────────────────────────────────
+    // ── Pied ──────────────────────────────────────────────────────────────────
     container
-        .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+        .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2))
         .addActionRowComponents(
             new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
@@ -116,18 +128,15 @@ function buildMainPanel() {
     return container;
 }
 
-// ─── Page d'une catégorie ─────────────────────────────────────────────────────
+// ─── Page catégorie ───────────────────────────────────────────────────────────
 
-function buildCategoryPanel(catKey, errorMsg = null) {
+function buildCategoryPanel(catKey, errorMsg = null, guildIconURL = null) {
     const cat      = config.ticketCategories[catKey];
     const colorHex = typeof cat.color === 'number' ? intToHex(cat.color) : (cat.color ?? '#5865f2');
     const catRef   = cat.categoryId          ? `<#${cat.categoryId}>`          : '*Non définie*';
     const tsRef    = cat.transcriptChannelId ? `<#${cat.transcriptChannelId}>` : '*Non défini*';
 
-    const catOk = statusIcon(cat.categoryId);
-    const tsOk  = statusIcon(cat.transcriptChannelId);
-
-    // Aperçu live du panel public
+    // Aperçu live
     const descLines   = (cat.description ?? '').split('\n').map(l => `> ${l}`).join('\n');
     const livePreview =
         `> ### ${cat.title}\n` +
@@ -137,49 +146,57 @@ function buildCategoryPanel(catKey, errorMsg = null) {
 
     const container = new ContainerBuilder().setAccentColor(colorInt(cat.color));
 
-    // ── Bandeau d'erreur ──────────────────────────────────────────────────────
+    // ── Erreur ────────────────────────────────────────────────────────────────
     if (errorMsg) {
         container
             .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                `> ❌  **Erreur**\n> ${errorMsg}`
+                `> ❌  **Erreur** — ${errorMsg}`
             ))
-            .addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+            .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2));
     }
 
     // ── En-tête ───────────────────────────────────────────────────────────────
-    container
-        .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-            `# ${cat.label}\n` +
-            `-# Clé interne : \`${catKey}\``
-        ))
-        .addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+    if (guildIconURL) {
+        container.addSectionComponents(
+            new SectionBuilder()
+                .addTextDisplayComponents(
+                    new TextDisplayBuilder().setContent(
+                        `# ${cat.label}\n-# Clé : \`${catKey}\``
+                    )
+                )
+                .setThumbnailAccessory(new ThumbnailBuilder().setURL(guildIconURL))
+        );
+    } else {
+        container.addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(`# ${cat.label}\n-# Clé : \`${catKey}\``)
+        );
+    }
 
-    // ── Statut de configuration ───────────────────────────────────────────────
+    // ── Configuration ─────────────────────────────────────────────────────────
     container
+        .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2))
         .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-            [
-                `### Configuration`,
-                `${catOk}  **Catégorie Discord**`,
-                `-# ${catRef}`,
-                `${tsOk}  **Salon des transcripts**`,
-                `-# ${tsRef}`,
-                `🎨  **Couleur de l'embed** · \`${colorHex}\``,
-            ].join('\n')
+            `### Configuration\n` +
+            `${statusIcon(cat.categoryId)}  **Catégorie Discord**  ·  ${catRef}\n` +
+            `${statusIcon(cat.transcriptChannelId)}  **Transcripts**  ·  ${tsRef}\n` +
+            `🎨  **Couleur**  ·  \`${colorHex}\``
         ))
         .addActionRowComponents(
             new ActionRowBuilder().addComponents(
                 new ButtonBuilder().setCustomId(`cfg_setcat:${catKey}`).setLabel('Catégorie Discord').setEmoji('📁').setStyle(ButtonStyle.Secondary),
                 new ButtonBuilder().setCustomId(`cfg_transcript:${catKey}`).setLabel('Transcripts').setEmoji('📋').setStyle(ButtonStyle.Secondary),
+                new ButtonBuilder().setCustomId(`cfg_color:${catKey}`).setLabel('Couleur').setEmoji('🎨').setStyle(ButtonStyle.Secondary),
             )
-        )
-        .addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+        );
 
-    // ── Aperçu live ───────────────────────────────────────────────────────────
+    // ── Aperçu embed ──────────────────────────────────────────────────────────
     container
+        .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2))
         .addTextDisplayComponents(new TextDisplayBuilder().setContent(
             `### Aperçu de l'embed public\n` +
             livePreview
         ))
+        .addSeparatorComponents(new SeparatorBuilder().setDivider(false).setSpacing(1))
         .addActionRowComponents(
             new ActionRowBuilder().addComponents(
                 new ButtonBuilder().setCustomId(`cfg_edit:${catKey}`).setLabel('Modifier l\'embed').setEmoji('✏️').setStyle(ButtonStyle.Secondary),
@@ -192,13 +209,42 @@ function buildCategoryPanel(catKey, errorMsg = null) {
         new ButtonBuilder().setCustomId('cfg_back').setLabel('Retour').setEmoji('↩️').setStyle(ButtonStyle.Secondary),
         new ButtonBuilder().setCustomId(`cfg_save:${catKey}`).setLabel('Sauvegarder').setEmoji('💾').setStyle(ButtonStyle.Success),
         new ButtonBuilder().setCustomId(`cfg_preview:${catKey}`).setLabel('Aperçu complet').setEmoji('👁️').setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder().setCustomId(`cfg_delete:${catKey}`).setLabel('Supprimer').setEmoji('🗑️').setStyle(ButtonStyle.Danger),
+        new ButtonBuilder().setCustomId(`cfg_delete_confirm:${catKey}`).setLabel('Supprimer').setEmoji('🗑️').setStyle(ButtonStyle.Danger),
     );
 
     return [container, actionRow];
 }
 
-// ─── Panel d'attente de saisie par message ────────────────────────────────────
+// ─── Confirmation de suppression ──────────────────────────────────────────────
+
+function buildDeleteConfirmPanel(catKey) {
+    const cat = config.ticketCategories[catKey];
+
+    const container = new ContainerBuilder()
+        .setAccentColor(0xed4245)
+        .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+            `# 🗑️  Supprimer une catégorie\n` +
+            `-# Cette action est irréversible`
+        ))
+        .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2))
+        .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+            `Tu es sur le point de supprimer la catégorie **${cat.label}**.\n` +
+            `\n` +
+            `Les tickets déjà ouverts dans cette catégorie ne seront pas affectés,\n` +
+            `mais il ne sera plus possible d'en ouvrir de nouveaux.\n` +
+            `\n` +
+            `-# Cette action supprime définitivement la configuration de la catégorie.`
+        ));
+
+    const actionRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId(`cfg_back_cat:${catKey}`).setLabel('Annuler').setEmoji('✖️').setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId(`cfg_delete_yes:${catKey}`).setLabel('Supprimer définitivement').setEmoji('🗑️').setStyle(ButtonStyle.Danger),
+    );
+
+    return [container, actionRow];
+}
+
+// ─── Panel d'attente de saisie ────────────────────────────────────────────────
 
 function buildAwaitingPanel(type, catKey) {
     const cat = config.ticketCategories[catKey] ?? { label: catKey };
@@ -208,7 +254,7 @@ function buildAwaitingPanel(type, catKey) {
             emoji: '📁',
             title: 'Catégorie Discord',
             what:  'Envoie l\'**ID de la catégorie Discord**',
-            hint:  'Clic droit sur la catégorie → *Copier l\'identifiant*\n-# Pense à activer le mode développeur dans tes paramètres Discord.',
+            hint:  'Clic droit sur la catégorie → *Copier l\'identifiant*\n-# Active le mode développeur : Paramètres → Avancés → Mode développeur.',
         },
         transcript: {
             emoji: '📋',
@@ -220,7 +266,7 @@ function buildAwaitingPanel(type, catKey) {
             emoji: '📤',
             title: 'Envoyer le panel',
             what:  'Envoie le **#salon** ou son **ID**',
-            hint:  'Le panel sera envoyé dans ce salon avec l\'embed et le bouton d\'ouverture.',
+            hint:  'L\'embed et le bouton d\'ouverture seront envoyés dans ce salon.',
         },
     };
 
@@ -232,16 +278,13 @@ function buildAwaitingPanel(type, catKey) {
             `# ${info.emoji}  ${info.title}\n` +
             `-# Catégorie : **${cat.label}**`
         ))
-        .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+        .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2))
         .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-            [
-                `### Que faire ?`,
-                `${info.what} dans ce salon.`,
-                ``,
-                info.hint,
-                ``,
-                `-# Tape \`annuler\` ou clique sur le bouton pour annuler.`,
-            ].join('\n')
+            `${info.what} directement dans ce salon.\n` +
+            `\n` +
+            info.hint +
+            `\n` +
+            `-# Tape \`annuler\` ou clique sur le bouton ci-dessous pour annuler.`
         ));
 
     const actionRow = new ActionRowBuilder().addComponents(
@@ -260,5 +303,6 @@ module.exports = {
     buildTicketOpenRow,
     buildMainPanel,
     buildCategoryPanel,
+    buildDeleteConfirmPanel,
     buildAwaitingPanel,
 };

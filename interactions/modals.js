@@ -1,12 +1,17 @@
 const { MessageFlags } = require('discord.js');
-const { config, saveConfig } = require('../utils/config');
-const { hexToInt, uniqueKey } = require('../utils/helpers');
+const { config, saveConfig }                 = require('../utils/config');
+const { hexToInt, uniqueKey }                = require('../utils/helpers');
 const { buildMainPanel, buildCategoryPanel } = require('../utils/builders');
 
-async function handleModal(interaction) {
-    const id = interaction.customId;
+function getGuildIcon(guild) {
+    return guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
+}
 
-    // ── Créer une nouvelle catégorie ──────────────────────────────────────────
+async function handleModal(interaction) {
+    const id   = interaction.customId;
+    const icon = getGuildIcon(interaction.guild);
+
+    // ── Créer une catégorie ───────────────────────────────────────────────────
     if (id === 'cfg_modal_create') {
         const label       = interaction.fields.getTextInputValue('label').trim();
         const title       = interaction.fields.getTextInputValue('title').trim();
@@ -15,7 +20,6 @@ async function handleModal(interaction) {
         const buttonLabel = interaction.fields.getTextInputValue('button_label').trim();
 
         const catKey = uniqueKey(label, config.ticketCategories);
-
         config.ticketCategories[catKey] = {
             label,
             title,
@@ -27,40 +31,38 @@ async function handleModal(interaction) {
         };
         saveConfig();
 
-        // Atterrir directement sur la page de la nouvelle catégorie
-        const [container, actionRow] = buildCategoryPanel(catKey);
-        return interaction.update({
-            components: [container, actionRow],
-            flags:      MessageFlags.IsComponentsV2,
-        });
+        const [container, actionRow] = buildCategoryPanel(catKey, null, icon);
+        return interaction.update({ components: [container, actionRow], flags: MessageFlags.IsComponentsV2 });
     }
 
-    // ── Modifier une catégorie existante ──────────────────────────────────────
+    // ── Modifier l'embed d'une catégorie ──────────────────────────────────────
     if (id.startsWith('cfg_modal_edit:')) {
         const catKey = id.split(':')[1];
         const cat    = config.ticketCategories[catKey];
+        if (!cat) return interaction.update({ components: [buildMainPanel(icon)], flags: MessageFlags.IsComponentsV2 });
 
-        if (!cat)
-            return interaction.update({
-                components: [buildMainPanel()],
-                flags:      MessageFlags.IsComponentsV2,
-            });
-
-        const colorRaw = interaction.fields.getTextInputValue('color').trim();
         const btnLabel = interaction.fields.getTextInputValue('button_label').trim();
-
         cat.title       = interaction.fields.getTextInputValue('title');
         cat.description = interaction.fields.getTextInputValue('description');
-        if (colorRaw) cat.color       = hexToInt(colorRaw);
         if (btnLabel) cat.buttonLabel = btnLabel;
         saveConfig();
 
-        // Revenir sur la page catégorie avec l'aperçu mis à jour
-        const [container, actionRow] = buildCategoryPanel(catKey);
-        return interaction.update({
-            components: [container, actionRow],
-            flags:      MessageFlags.IsComponentsV2,
-        });
+        const [container, actionRow] = buildCategoryPanel(catKey, null, icon);
+        return interaction.update({ components: [container, actionRow], flags: MessageFlags.IsComponentsV2 });
+    }
+
+    // ── Modifier la couleur ───────────────────────────────────────────────────
+    if (id.startsWith('cfg_modal_color:')) {
+        const catKey  = id.split(':')[1];
+        const cat     = config.ticketCategories[catKey];
+        if (!cat) return interaction.update({ components: [buildMainPanel(icon)], flags: MessageFlags.IsComponentsV2 });
+
+        const colorRaw = interaction.fields.getTextInputValue('color').trim();
+        cat.color = hexToInt(colorRaw);
+        saveConfig();
+
+        const [container, actionRow] = buildCategoryPanel(catKey, null, icon);
+        return interaction.update({ components: [container, actionRow], flags: MessageFlags.IsComponentsV2 });
     }
 }
 

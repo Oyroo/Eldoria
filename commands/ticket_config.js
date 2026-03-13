@@ -8,8 +8,10 @@ module.exports = {
         .setDefaultMemberPermissions('8'),
 
     async execute(interaction) {
+        const iconURL = interaction.guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
+
         await interaction.reply({
-            components: [buildMainPanel()],
+            components: [buildMainPanel(iconURL)],
             flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
         });
     },
