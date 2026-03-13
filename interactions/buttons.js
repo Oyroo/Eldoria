@@ -70,7 +70,7 @@ async function handleButton(interaction) {
         });
     }
 
-    // Retour depuis la page de confirmation vers la page catégorie
+    // Retour depuis la page de confirmation vers la page embed
     if (id.startsWith('cfg_back_cat:')) {
         const catKey = id.split(':')[1];
         const [container, actionRow] = buildCategoryPanel(catKey, null, icon);
@@ -87,7 +87,7 @@ async function handleButton(interaction) {
     if (id === 'cfg_create') {
         const modal = new ModalBuilder()
             .setCustomId('cfg_modal_create')
-            .setTitle('Nouvelle catégorie de tickets');
+            .setTitle('Nouvel embed de tickets');
         modal.addComponents(
             new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('label').setLabel('Nom affiché (ex: 🎫 Support)').setStyle(TextInputStyle.Short).setRequired(true)),
             new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('title').setLabel('Titre de l\'embed').setStyle(TextInputStyle.Short).setRequired(true)),
@@ -192,7 +192,7 @@ async function handleButton(interaction) {
     if (id.startsWith('cfg_preview:')) {
         const catKey = id.split(':')[1];
         const cat    = config.ticketCategories[catKey];
-        if (!cat) return interaction.reply({ content: '❌ Catégorie introuvable.', flags: MessageFlags.Ephemeral });
+        if (!cat) return interaction.reply({ content: '❌ Embed introuvable.', flags: MessageFlags.Ephemeral });
         return interaction.reply({
             content:    `-# Aperçu — **${cat.label}**`,
             embeds:     [buildTicketEmbed(catKey)],
@@ -228,7 +228,7 @@ async function handleButton(interaction) {
         const cat    = config.ticketCategories[catKey];
 
         if (!cat)
-            return interaction.reply({ content: '❌ Cette catégorie n\'existe plus.', flags: MessageFlags.Ephemeral });
+            return interaction.reply({ content: '❌ Cet embed n\'existe plus.', flags: MessageFlags.Ephemeral });
 
         const openTickets = getTickets();
         const existing    = Object.values(openTickets).find(t => t.userId === interaction.user.id);
@@ -267,7 +267,7 @@ async function handleButton(interaction) {
                     .setDescription(`Bonjour <@${interaction.user.id}>, bienvenue dans ton ticket.\nDécris ta demande et notre équipe reviendra vers toi rapidement.`)
                     .addFields(
                         { name: 'Ouvert par', value: `<@${interaction.user.id}>`, inline: true },
-                        { name: 'Catégorie',  value: cat.label,                   inline: true },
+                        { name: 'Embed',  value: cat.label,                   inline: true },
                         { name: 'Ouvert le',  value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false },
                     )
                     .setColor(colorInt(cat.color))
@@ -312,7 +312,7 @@ async function handleButton(interaction) {
                         new EmbedBuilder()
                             .setTitle(`📋 Transcript — Ticket #${String(ticketInfo.ticketNumber).padStart(4, '0')}`)
                             .addFields(
-                                { name: 'Catégorie',   value: cat?.label ?? ticketInfo.catKey, inline: true },
+                                { name: 'Embed',   value: cat?.label ?? ticketInfo.catKey, inline: true },
                                 { name: 'Utilisateur', value: `<@${ticketInfo.userId}> (${ticketInfo.username})`, inline: true },
                                 { name: 'Fermé par',   value: interaction.user.tag, inline: true },
                                 { name: 'Ouvert le',   value: `<t:${Math.floor(ticketInfo.openedAt / 1000)}:F>`, inline: false },

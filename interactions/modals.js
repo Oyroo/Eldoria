@@ -11,7 +11,7 @@ async function handleModal(interaction) {
     const id   = interaction.customId;
     const icon = getGuildIcon(interaction.guild);
 
-    // ── Créer une catégorie ───────────────────────────────────────────────────
+    // ── Créer un embed ───────────────────────────────────────────────────
     if (id === 'cfg_modal_create') {
         const label       = interaction.fields.getTextInputValue('label').trim();
         const title       = interaction.fields.getTextInputValue('title').trim();
@@ -35,7 +35,7 @@ async function handleModal(interaction) {
         return interaction.update({ components: [container, actionRow], flags: MessageFlags.IsComponentsV2 });
     }
 
-    // ── Modifier l'embed d'une catégorie ──────────────────────────────────────
+    // ── Modifier l'embed ──────────────────────────────────────
     if (id.startsWith('cfg_modal_edit:')) {
         const catKey = id.split(':')[1];
         const cat    = config.ticketCategories[catKey];

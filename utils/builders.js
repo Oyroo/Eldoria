@@ -55,8 +55,8 @@ function buildMainPanel(guildIconURL = null) {
                     new TextDisplayBuilder().setContent(
                         `# 🎫  Gestion des tickets\n` +
                         `-# ${total === 0
-                            ? 'Aucune catégorie — crée-en une pour commencer'
-                            : `${total} catégorie${total > 1 ? 's' : ''} configurée${total > 1 ? 's' : ''}`
+                            ? 'Aucun embed — crée-en un pour commencer'
+                            : `${total} embed${total > 1 ? 's' : ''} configuré${total > 1 ? 's' : ''}`
                         }`
                     )
                 )
@@ -69,24 +69,24 @@ function buildMainPanel(guildIconURL = null) {
             new TextDisplayBuilder().setContent(
                 `# 🎫  Gestion des tickets\n` +
                 `-# ${total === 0
-                    ? 'Aucune catégorie — crée-en une pour commencer'
-                    : `${total} catégorie${total > 1 ? 's' : ''} configurée${total > 1 ? 's' : ''}`
+                    ? 'Aucun embed — crée-en un pour commencer'
+                    : `${total} embed${total > 1 ? 's' : ''} configuré${total > 1 ? 's' : ''}`
                 }`
             )
         );
     }
 
-    // ── Aucune catégorie ──────────────────────────────────────────────────────
+    // ── Aucun embed ──────────────────────────────────────────────────────
     if (total === 0) {
         container
             .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2))
             .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                `Crée ta première catégorie de tickets ci-dessous.\n` +
-                `-# Chaque catégorie a son propre embed, ses permissions et son salon de transcripts.`
+                `Crée ton premier embed de tickets ci-dessous.\n` +
+                `-# Chaque embed a son propre affichage, ses permissions et son salon de transcripts.`
             ));
     }
 
-    // ── Catégories ────────────────────────────────────────────────────────────
+    // ── Embeds ────────────────────────────────────────────────────────────
     for (const catKey of catKeys) {
         const c        = cats[catKey];
         const colorHex = typeof c.color === 'number' ? intToHex(c.color) : (c.color ?? '#5865f2');
@@ -119,7 +119,7 @@ function buildMainPanel(guildIconURL = null) {
             new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
                     .setCustomId('cfg_create')
-                    .setLabel('Nouvelle catégorie')
+                    .setLabel('Nouvel embed')
                     .setEmoji('➕')
                     .setStyle(ButtonStyle.Success),
             )
@@ -128,7 +128,7 @@ function buildMainPanel(guildIconURL = null) {
     return container;
 }
 
-// ─── Page catégorie ───────────────────────────────────────────────────────────
+// ─── Page embed ───────────────────────────────────────────────────────────
 
 function buildCategoryPanel(catKey, errorMsg = null, guildIconURL = null) {
     const cat      = config.ticketCategories[catKey];
@@ -223,17 +223,17 @@ function buildDeleteConfirmPanel(catKey) {
     const container = new ContainerBuilder()
         .setAccentColor(0xed4245)
         .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-            `# 🗑️  Supprimer une catégorie\n` +
+            `# 🗑️  Supprimer un embed\n` +
             `-# Cette action est irréversible`
         ))
         .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2))
         .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-            `Tu es sur le point de supprimer la catégorie **${cat.label}**.\n` +
+            `Tu es sur le point de supprimer l'embed **${cat.label}**.\n` +
             `\n` +
-            `Les tickets déjà ouverts dans cette catégorie ne seront pas affectés,\n` +
+            `Les tickets déjà ouverts dans cet embed ne seront pas affectés,\n` +
             `mais il ne sera plus possible d'en ouvrir de nouveaux.\n` +
             `\n` +
-            `-# Cette action supprime définitivement la configuration de la catégorie.`
+            `-# Cette action supprime définitivement la configuration de l'embed.`
         ));
 
     const actionRow = new ActionRowBuilder().addComponents(
@@ -276,7 +276,7 @@ function buildAwaitingPanel(type, catKey) {
         .setAccentColor(ACCENT_WAIT)
         .addTextDisplayComponents(new TextDisplayBuilder().setContent(
             `# ${info.emoji}  ${info.title}\n` +
-            `-# Catégorie : **${cat.label}**`
+            `-# Embed : **${cat.label}**`
         ))
         .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2))
         .addTextDisplayComponents(new TextDisplayBuilder().setContent(
