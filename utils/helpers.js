@@ -16,14 +16,14 @@ function slugify(str) {
         .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
         .replace(/[^a-z0-9]+/g, '_')
         .replace(/^_|_$/g, '')
-        .slice(0, 24) || 'cat_' + Date.now();
+        .slice(0, 24) || 'item_' + Date.now();
 }
 
-function uniqueKey(label, categories) {
+function uniqueKey(label, existing) {
     const base = slugify(label);
-    if (!categories[base]) return base;
+    if (!existing[base]) return base;
     let i = 2;
-    while (categories[`${base}_${i}`]) i++;
+    while (existing[`${base}_${i}`]) i++;
     return `${base}_${i}`;
 }
 

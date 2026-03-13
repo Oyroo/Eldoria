@@ -1,57 +1,28 @@
-const { REST, Routes, SlashCommandBuilder, ChannelType } = require('discord.js');
+const { REST, Routes } = require('discord.js');
+const fs   = require('fs');
+const path = require('path');
+
 const config = require('./config.json');
 
-const commands = [
-    new SlashCommandBuilder()
-        .setName('recreate_forums')
-        .setDescription('Recrée les salons texte en salons forums avec les tags configurés')
-        .setDefaultMemberPermissions('8'),
+const commands = [];
 
-    new SlashCommandBuilder()
-        .setName('list_channels')
-        .setDescription('Liste les salons configurés pour la conversion'),
-
-    new SlashCommandBuilder()
-        .setName('add_channel')
-        .setDescription('Ajoute un salon à convertir en forum')
-        .addStringOption(o => o.setName('channel_id').setDescription("L'ID du salon texte à convertir").setRequired(true))
-        .setDefaultMemberPermissions('8'),
-
-    new SlashCommandBuilder()
-        .setName('serverinfo')
-        .setDescription('Affiche les informations du serveur'),
-
-    new SlashCommandBuilder()
-        .setName('ticket-config')
-        .setDescription('Ouvre le panel de configuration des tickets')
-        .setDefaultMemberPermissions('8'),
-
-    new SlashCommandBuilder()
-        .setName('ticket-panel')
-        .setDescription('Envoie un panel de tickets dans un salon')
-        .setDefaultMemberPermissions('8')
-        .addStringOption(o =>
-            o.setName('categorie')
-                .setDescription('Catégorie de tickets à envoyer (autocomplete)')
-                .setRequired(true)
-                .setAutocomplete(true)   // ← liste dynamique depuis config.json
-        )
-        .addChannelOption(o =>
-            o.setName('salon')
-                .setDescription('Salon où envoyer le panel')
-                .addChannelTypes(ChannelType.GuildText)
-                .setRequired(true)
-        ),
-
-].map(cmd => cmd.toJSON());
+const commandFiles = fs.readdirSync(path.join(__dirname, 'commands')).filter(f => f.endsWith('.js'));
+for (const file of commandFiles) {
+    const command = require(`./commands/${file}`);
+    commands.push(command.data.toJSON());
+    console.log(`📦 Commande lue : ${command.data.name}`);
+}
 
 const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
 
 (async () => {
     try {
-        console.log('🔄 Enregistrement des slash commands...');
-        await rest.put(Routes.applicationGuildCommands(process.env.CLIENT_ID, config.guildId), { body: commands });
-        console.log('✅ Slash commands enregistrées avec succès !');
+        console.log(`🔄 Enregistrement de ${commands.length} commande(s)...`);
+        await rest.put(
+            Routes.applicationGuildCommands(process.env.CLIENT_ID, config.guildId),
+            { body: commands }
+        );
+        console.log('✅ Toutes les slash commands ont été enregistrées.');
     } catch (err) {
         console.error('❌ Erreur lors de l\'enregistrement :', err);
     }

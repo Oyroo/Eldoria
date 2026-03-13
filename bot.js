@@ -9,7 +9,7 @@ const app = express();
 app.get('/', (req, res) => res.send('Bot Eldoria running'));
 app.listen(3000, () => console.log('Web server ready'));
 
-// ─── Charger les commandes slash ──────────────────────────────────────────────
+// ─── Charger les commandes ────────────────────────────────────────────────────
 
 client.commands = new Map();
 

@@ -1,6 +1,4 @@
-const { Events } = require('discord.js');
-const { handleButton } = require('../interactions/buttons');
-const { handleModal }  = require('../interactions/modals');
+const { Events, MessageFlags } = require('discord.js');
 
 module.exports = {
     name: Events.InteractionCreate,
@@ -25,20 +23,24 @@ module.exports = {
 
             // ── Boutons ───────────────────────────────────────────────────────
             if (interaction.isButton()) {
-                await handleButton(interaction);
+                // Importer le handler quand il sera créé :
+                // const { handleButton } = require('../interactions/buttons');
+                // await handleButton(interaction);
                 return;
             }
 
             // ── Modals ────────────────────────────────────────────────────────
             if (interaction.isModalSubmit()) {
-                await handleModal(interaction);
+                // Importer le handler quand il sera créé :
+                // const { handleModal } = require('../interactions/modals');
+                // await handleModal(interaction);
                 return;
             }
 
         } catch (err) {
             console.error(`Erreur interaction [${interaction.customId ?? interaction.commandName}] :`, err);
 
-            const payload = { content: `❌ Une erreur est survenue : \`${err.message}\``, flags: 64 };
+            const payload = { content: `❌ Une erreur est survenue : \`${err.message}\``, flags: MessageFlags.Ephemeral };
             try {
                 if (interaction.replied || interaction.deferred) {
                     await interaction.followUp(payload);
