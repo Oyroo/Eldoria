@@ -1,4 +1,6 @@
-const { Events, MessageFlags } = require('discord.js');
+const { Events, MessageFlags }  = require('discord.js');
+const { handleButton } = require('../interactions/buttons');
+const { handleModal }  = require('../interactions/modals');
 
 module.exports = {
     name: Events.InteractionCreate,
@@ -23,17 +25,13 @@ module.exports = {
 
             // ── Boutons ───────────────────────────────────────────────────────
             if (interaction.isButton()) {
-                // Importer le handler quand il sera créé :
-                // const { handleButton } = require('../interactions/buttons');
-                // await handleButton(interaction);
+                await handleButton(interaction);
                 return;
             }
 
             // ── Modals ────────────────────────────────────────────────────────
             if (interaction.isModalSubmit()) {
-                // Importer le handler quand il sera créé :
-                // const { handleModal } = require('../interactions/modals');
-                // await handleModal(interaction);
+                await handleModal(interaction);
                 return;
             }
 
