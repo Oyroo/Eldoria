@@ -2,7 +2,12 @@ const { REST, Routes } = require('discord.js');
 const fs   = require('fs');
 const path = require('path');
 
-const config = require('./config.json');
+// guildId depuis la variable d'environnement (config.json n'existe pas encore au build)
+const guildId = process.env.GUILD_ID;
+if (!guildId) {
+    console.error('❌ Variable d\'environnement GUILD_ID manquante.');
+    process.exit(1);
+}
 
 const commands = [];
 
@@ -22,7 +27,7 @@ const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
     try {
         console.log(`🔄 Enregistrement de ${commands.length} commande(s)...`);
         await rest.put(
-            Routes.applicationGuildCommands(process.env.CLIENT_ID, config.guildId),
+            Routes.applicationGuildCommands(process.env.CLIENT_ID, guildId),
             { body: commands }
         );
         console.log('✅ Toutes les slash commands ont été enregistrées.');
