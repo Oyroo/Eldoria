@@ -32,7 +32,7 @@ module.exports = {
                     )
                     .setThumbnailAccessory(new ThumbnailBuilder().setURL(iconURL))
             )
-            .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+            .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
             .addTextDisplayComponents(new TextDisplayBuilder().setContent([
                 `### 👑 Informations générales`,
                 `👑  **Propriétaire** : ${owner.user} (\`${owner.id}\`)`,
@@ -49,7 +49,7 @@ module.exports = {
                 `📋  **Forums** : **${ch.filter(c => c.type === ChannelType.GuildForum).size}**`,
                 `📁  **Catégories** : **${ch.filter(c => c.type === ChannelType.GuildCategory).size}**`,
             ].join('\n')))
-            .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+            .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
             .addTextDisplayComponents(new TextDisplayBuilder().setContent([
                 `### 🚀 Boosts du serveur`,
                 `✨  **Niveau actuel** : **${bstLabels[guild.premiumTier] ?? 'Inconnu'}**`,
