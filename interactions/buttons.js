@@ -6,17 +6,20 @@ const {
 const fs   = require('fs');
 const path = require('path');
 
-const { config, saveConfig }              = require('../utils/config');
-const { intToHex, colorInt }              = require('../utils/helpers');
-const { pendingInputs }                   = require('../utils/pending');
-const { getTickets, saveTickets }         = require('../utils/tickets');
-const { generateTranscript }              = require('../utils/transcript');
+const { config, saveConfig }      = require('../utils/config');
+const { intToHex, colorInt }      = require('../utils/helpers');
+const { pendingInputs }           = require('../utils/pending');
+const { getTickets, saveTickets } = require('../utils/tickets');
+const { generateTranscript }      = require('../utils/transcript');
 const {
-    buildConfigPanel, buildAwaitingPanel,
-    buildTicketEmbed, buildTicketOpenRow,
+    buildMainPanel,
+    buildCategoryPanel,
+    buildAwaitingPanel,
+    buildTicketEmbed,
+    buildTicketOpenRow,
 } = require('../utils/builders');
 
-// ─── Boutons du panel de contrôle dans le salon ticket ────────────────────────
+// ─── Boutons de contrôle dans le salon ticket ─────────────────────────────────
 
 function buildTicketControlRow(claimed = false, claimerTag = null) {
     return new ActionRowBuilder().addComponents(
@@ -37,7 +40,32 @@ async function handleButton(interaction) {
     const id = interaction.customId;
 
     // ════════════════════════════════════════════════════════════════════════
-    // PANEL DE CONFIGURATION
+    // NAVIGATION
+    // ════════════════════════════════════════════════════════════════════════
+
+    // ← Retour au menu principal
+    if (id === 'cfg_back') {
+        return interaction.update({
+            components: [buildMainPanel()],
+            flags:      MessageFlags.IsComponentsV2,
+        });
+    }
+
+    // Ouvrir la page d'une catégorie
+    if (id.startsWith('cfg_open:')) {
+        const catKey = id.split(':')[1];
+        if (!config.ticketCategories[catKey])
+            return interaction.update({ components: [buildMainPanel()], flags: MessageFlags.IsComponentsV2 });
+
+        const [container, actionRow] = buildCategoryPanel(catKey);
+        return interaction.update({
+            components: [container, actionRow],
+            flags:      MessageFlags.IsComponentsV2,
+        });
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // MENU PRINCIPAL
     // ════════════════════════════════════════════════════════════════════════
 
     // ── Nouvelle catégorie → modal ────────────────────────────────────────────
@@ -77,12 +105,15 @@ async function handleButton(interaction) {
         return interaction.showModal(modal);
     }
 
-    // ── Modifier une catégorie → modal ────────────────────────────────────────
+    // ════════════════════════════════════════════════════════════════════════
+    // PAGE CATÉGORIE
+    // ════════════════════════════════════════════════════════════════════════
+
+    // ── Modifier l'embed → modal ──────────────────────────────────────────────
     if (id.startsWith('cfg_edit:')) {
         const catKey = id.split(':')[1];
         const cat    = config.ticketCategories[catKey];
-        if (!cat)
-            return interaction.update({ components: [buildConfigPanel('Catégorie introuvable.')], flags: MessageFlags.IsComponentsV2 });
+        if (!cat) return interaction.update({ components: [buildMainPanel()], flags: MessageFlags.IsComponentsV2 });
 
         const modal = new ModalBuilder()
             .setCustomId(`cfg_modal_edit:${catKey}`)
@@ -121,8 +152,9 @@ async function handleButton(interaction) {
             appId:   interaction.client.application.id,
             guildId: interaction.guildId,
         };
+        const [container, actionRow] = buildAwaitingPanel('setcat', catKey);
         return interaction.update({
-            components: [buildAwaitingPanel('setcat', catKey)],
+            components: [container, actionRow],
             flags:      MessageFlags.IsComponentsV2,
         });
     }
@@ -136,8 +168,9 @@ async function handleButton(interaction) {
             appId:   interaction.client.application.id,
             guildId: interaction.guildId,
         };
+        const [container, actionRow] = buildAwaitingPanel('transcript', catKey);
         return interaction.update({
-            components: [buildAwaitingPanel('transcript', catKey)],
+            components: [container, actionRow],
             flags:      MessageFlags.IsComponentsV2,
         });
     }
@@ -151,17 +184,53 @@ async function handleButton(interaction) {
             appId:   interaction.client.application.id,
             guildId: interaction.guildId,
         };
+        const [container, actionRow] = buildAwaitingPanel('sendchan', catKey);
         return interaction.update({
-            components: [buildAwaitingPanel('sendchan', catKey)],
+            components: [container, actionRow],
             flags:      MessageFlags.IsComponentsV2,
         });
     }
 
-    // ── Annuler l'attente ─────────────────────────────────────────────────────
+    // ── Annuler l'attente → retour à la page catégorie ────────────────────────
     if (id === 'cfg_cancel') {
+        const pending = pendingInputs[interaction.user.id];
+        const catKey  = pending?.catKey;
         delete pendingInputs[interaction.user.id];
+
+        if (catKey && config.ticketCategories[catKey]) {
+            const [container, actionRow] = buildCategoryPanel(catKey);
+            return interaction.update({
+                components: [container, actionRow],
+                flags:      MessageFlags.IsComponentsV2,
+            });
+        }
+
         return interaction.update({
-            components: [buildConfigPanel()],
+            components: [buildMainPanel()],
+            flags:      MessageFlags.IsComponentsV2,
+        });
+    }
+
+    // ── Sauvegarder (force save + confirmation visuelle) ─────────────────────
+    if (id.startsWith('cfg_save:')) {
+        const catKey = id.split(':')[1];
+        if (!config.ticketCategories[catKey])
+            return interaction.update({ components: [buildMainPanel()], flags: MessageFlags.IsComponentsV2 });
+
+        saveConfig();
+
+        const [container, actionRow] = buildCategoryPanel(catKey);
+
+        // Remplacer le bouton Sauvegarder par une confirmation temporaire
+        const confirmedRow = new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId('cfg_back').setLabel('Retour').setEmoji('←').setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId(`cfg_save:${catKey}`).setLabel('Sauvegardé !').setEmoji('✅').setStyle(ButtonStyle.Success).setDisabled(true),
+            new ButtonBuilder().setCustomId(`cfg_preview:${catKey}`).setLabel('Aperçu').setEmoji('👁️').setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId(`cfg_delete:${catKey}`).setLabel('Supprimer').setEmoji('🗑️').setStyle(ButtonStyle.Danger),
+        );
+
+        return interaction.update({
+            components: [container, confirmedRow],
             flags:      MessageFlags.IsComponentsV2,
         });
     }
@@ -186,7 +255,7 @@ async function handleButton(interaction) {
         delete config.ticketCategories[id.split(':')[1]];
         saveConfig();
         return interaction.update({
-            components: [buildConfigPanel()],
+            components: [buildMainPanel()],
             flags:      MessageFlags.IsComponentsV2,
         });
     }
@@ -206,7 +275,6 @@ async function handleButton(interaction) {
                 flags:   MessageFlags.Ephemeral,
             });
 
-        // Vérifier qu'il n'a pas déjà un ticket ouvert
         const openTickets = getTickets();
         const existing    = Object.values(openTickets).find(t => t.userId === interaction.user.id);
         if (existing)
@@ -217,53 +285,41 @@ async function handleButton(interaction) {
 
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-        // Incrémenter le compteur
         config.ticketCounter = (config.ticketCounter ?? 0) + 1;
         saveConfig();
 
         const ticketNumber = config.ticketCounter;
         const channelName  = `ticket-${String(ticketNumber).padStart(4, '0')}-${interaction.user.username}`
-            .toLowerCase()
-            .replace(/[^a-z0-9-]/g, '-')
-            .slice(0, 32);
+            .toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 32);
 
-        // Créer le salon texte
         const ticketChannel = await interaction.guild.channels.create({
             name:   channelName,
             type:   ChannelType.GuildText,
             parent: cat.categoryId ?? null,
             topic:  `Ticket #${String(ticketNumber).padStart(4, '0')} — ${interaction.user.tag} — ${cat.label}`,
             permissionOverwrites: [
-                {
-                    id:   interaction.guild.roles.everyone,
-                    deny: [PermissionFlagsBits.ViewChannel],
-                },
-                {
-                    id:    interaction.user.id,
-                    allow: [
-                        PermissionFlagsBits.ViewChannel,
-                        PermissionFlagsBits.SendMessages,
-                        PermissionFlagsBits.ReadMessageHistory,
-                        PermissionFlagsBits.AttachFiles,
-                    ],
-                },
+                { id: interaction.guild.roles.everyone, deny: [PermissionFlagsBits.ViewChannel] },
+                { id: interaction.user.id, allow: [
+                    PermissionFlagsBits.ViewChannel,
+                    PermissionFlagsBits.SendMessages,
+                    PermissionFlagsBits.ReadMessageHistory,
+                    PermissionFlagsBits.AttachFiles,
+                ]},
             ],
         });
 
-        // Sauvegarder le ticket
         const ticketInfo = {
-            channelId:    ticketChannel.id,
-            userId:       interaction.user.id,
-            username:     interaction.user.tag,
-            openedAt:     Date.now(),
-            claimedBy:    null,
+            channelId: ticketChannel.id,
+            userId:    interaction.user.id,
+            username:  interaction.user.tag,
+            openedAt:  Date.now(),
+            claimedBy: null,
             ticketNumber,
             catKey,
         };
         openTickets[ticketChannel.id] = ticketInfo;
         saveTickets();
 
-        // Message d'accueil dans le salon
         await ticketChannel.send({
             content: `<@${interaction.user.id}>`,
             embeds: [
@@ -284,48 +340,38 @@ async function handleButton(interaction) {
             components: [buildTicketControlRow()],
         });
 
-        return interaction.editReply({
-            content: `✅ Ton ticket a été créé : <#${ticketChannel.id}>`,
-        });
+        return interaction.editReply({ content: `✅ Ton ticket a été créé : <#${ticketChannel.id}>` });
     }
 
-    // ── Claim d'un ticket ─────────────────────────────────────────────────────
+    // ── Claim ─────────────────────────────────────────────────────────────────
     if (id === 'ticket_claim') {
         const openTickets = getTickets();
         const ticketInfo  = openTickets[interaction.channelId];
-
         if (!ticketInfo)
             return interaction.reply({ content: '❌ Ticket introuvable.', flags: MessageFlags.Ephemeral });
 
         ticketInfo.claimedBy = interaction.user.tag;
         saveTickets();
 
-        await interaction.message.edit({
-            components: [buildTicketControlRow(true, interaction.user.tag)],
-        });
-
-        return interaction.reply({
-            content: `🙋 Ticket pris en charge par **${interaction.user.tag}**.`,
-        });
+        await interaction.message.edit({ components: [buildTicketControlRow(true, interaction.user.tag)] });
+        return interaction.reply({ content: `🙋 Ticket pris en charge par **${interaction.user.tag}**.` });
     }
 
-    // ── Fermeture d'un ticket ─────────────────────────────────────────────────
+    // ── Fermeture ─────────────────────────────────────────────────────────────
     if (id === 'ticket_close') {
         const openTickets = getTickets();
         const ticketInfo  = openTickets[interaction.channelId];
-
         if (!ticketInfo)
             return interaction.reply({ content: '❌ Ticket introuvable.', flags: MessageFlags.Ephemeral });
 
         await interaction.reply({ content: '🔒 Fermeture en cours, génération du transcript...' });
 
         try {
-            const html     = await generateTranscript(interaction.channel, ticketInfo);
-            const fname    = `transcript-${interaction.channel.name}.html`;
-            const tmpPath  = path.join('/tmp', fname);
+            const html    = await generateTranscript(interaction.channel, ticketInfo);
+            const fname   = `transcript-${interaction.channel.name}.html`;
+            const tmpPath = path.join('/tmp', fname);
             fs.writeFileSync(tmpPath, html, 'utf-8');
 
-            // Envoyer le transcript dans le salon configuré pour cette catégorie
             const cat  = config.ticketCategories[ticketInfo.catKey];
             const tsId = cat?.transcriptChannelId;
 
@@ -349,7 +395,6 @@ async function handleButton(interaction) {
                 });
             }
 
-            // Nettoyage
             if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
             delete openTickets[interaction.channelId];
             saveTickets();

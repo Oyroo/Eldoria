@@ -1,7 +1,7 @@
 const { MessageFlags } = require('discord.js');
 const { config, saveConfig } = require('../utils/config');
 const { hexToInt, uniqueKey } = require('../utils/helpers');
-const { buildConfigPanel }    = require('../utils/builders');
+const { buildMainPanel, buildCategoryPanel } = require('../utils/builders');
 
 async function handleModal(interaction) {
     const id = interaction.customId;
@@ -27,8 +27,10 @@ async function handleModal(interaction) {
         };
         saveConfig();
 
+        // Atterrir directement sur la page de la nouvelle catégorie
+        const [container, actionRow] = buildCategoryPanel(catKey);
         return interaction.update({
-            components: [buildConfigPanel()],
+            components: [container, actionRow],
             flags:      MessageFlags.IsComponentsV2,
         });
     }
@@ -40,7 +42,7 @@ async function handleModal(interaction) {
 
         if (!cat)
             return interaction.update({
-                components: [buildConfigPanel('Catégorie introuvable.')],
+                components: [buildMainPanel()],
                 flags:      MessageFlags.IsComponentsV2,
             });
 
@@ -53,8 +55,10 @@ async function handleModal(interaction) {
         if (btnLabel) cat.buttonLabel = btnLabel;
         saveConfig();
 
+        // Revenir sur la page catégorie avec l'aperçu mis à jour
+        const [container, actionRow] = buildCategoryPanel(catKey);
         return interaction.update({
-            components: [buildConfigPanel()],
+            components: [container, actionRow],
             flags:      MessageFlags.IsComponentsV2,
         });
     }

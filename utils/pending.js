@@ -1,18 +1,20 @@
 const { Routes, MessageFlags } = require('discord.js');
 const client = require('../client');
 
-// Stocke les saisies en attente par userId
 // { [userId]: { type, catKey, token, appId, guildId } }
 const pendingInputs = {};
 
-// Édite le panel de config éphémère via le token d'interaction
-async function patchPanel(token, appId, panel) {
+// Édite le panel éphémère via le token d'interaction
+// components : ContainerBuilder | [ContainerBuilder, ActionRowBuilder]
+async function patchPanel(token, appId, components) {
+    const list = Array.isArray(components) ? components : [components];
+
     try {
         await client.rest.patch(
             Routes.webhookMessage(appId, token),
             {
                 body: {
-                    components: [panel.toJSON()],
+                    components: list.map(c => c.toJSON()),
                     flags:      MessageFlags.IsComponentsV2,
                 },
             }
