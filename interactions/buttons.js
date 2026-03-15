@@ -48,6 +48,19 @@ async function handleButton(interaction) {
     const icon = getGuildIcon(interaction.guild);
 
     // ════════════════════════════════════════════════════════════════════════
+    // PING — bouton rafraîchir
+    // ════════════════════════════════════════════════════════════════════════
+
+    if (id === 'ping_refresh') {
+        const { buildPingContainer, buildPingActions } = require('../commands/ping');
+        const container = buildPingContainer(interaction);
+        return interaction.update({
+            components: [container, buildPingActions()],
+            flags:      MessageFlags.IsComponentsV2,
+        });
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
     // NAVIGATION
     // ════════════════════════════════════════════════════════════════════════
 
