@@ -1,15 +1,4 @@
-﻿const {
-  SlashCommandBuilder,
-  ContainerBuilder,
-  SectionBuilder,
-  TextDisplayBuilder,
-  SeparatorBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  MessageFlags,
-  PermissionFlagsBits,
-} = require('discord.js');
+﻿const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 
 function formatDuration(ms) {
   const totalSeconds = Math.floor(ms / 1000);
@@ -25,42 +14,6 @@ function formatDuration(ms) {
   return parts.join(' ');
 }
 
-function buildPingContainer(interaction) {
-  const now = Date.now();
-  const msgLatency = now - interaction.createdTimestamp;
-  const apiLatency = Math.round(interaction.client.ws.ping);
-  const uptime = formatDuration(interaction.client.uptime ?? 0);
-
-  const container = new ContainerBuilder().setAccentColor(0x5865f2);
-
-  container
-    .addSectionComponents(
-      new SectionBuilder().addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-          `# 🏓 Ping — Statut du bot\n` +
-            `-# Temps : **${new Date().toLocaleString('fr-FR')}**\n` +
-            `\n` +
-            `> ⏱️ **Latence** : ${msgLatency}ms (message) / ${apiLatency}ms (API)\n` +
-            `> 📡 **Uptime** : ${uptime}\n` +
-            `> 🧩 **Versions** : discord.js ${require('discord.js').version} • Node ${process.versions.node}`
-        )
-      )
-    )
-    .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2));
-
-  return container;
-}
-
-function buildPingActions() {
-  return new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId('ping_refresh')
-      .setLabel('Rafraîchir')
-      .setEmoji('🔄')
-      .setStyle(ButtonStyle.Secondary)
-  );
-}
-
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('ping')
@@ -69,14 +22,24 @@ module.exports = {
     .setDMPermission(false),
 
   async execute(interaction) {
-    const container = buildPingContainer(interaction);
+    const now = Date.now();
+    const msgLatency = now - interaction.createdTimestamp;
+    const apiLatency = Math.round(interaction.client.ws.ping);
+    const uptime = formatDuration(interaction.client.uptime ?? 0);
+
+    const embed = new EmbedBuilder()
+      .setTitle('🏓 Pong !')
+      .setColor(0x5865f2)
+      .addFields(
+        { name: '⏱️ Latence', value: `Message : **${msgLatency}ms**\nAPI : **${apiLatency}ms**`, inline: true },
+        { name: '📡 Uptime', value: `**${uptime}**`, inline: true },
+        { name: '🧩 Versions', value: `discord.js : **${require('discord.js').version}**\nNode.js : **${process.versions.node}**` }
+      )
+      .setFooter({ text: 'Eldoria Bot • Ping' });
 
     await interaction.reply({
-      components: [container, buildPingActions()],
-      flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+      embeds: [embed],
+      ephemeral: true,
     });
   },
-
-  buildPingContainer,
-  buildPingActions,
 };
