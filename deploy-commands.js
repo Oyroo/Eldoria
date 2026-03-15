@@ -16,7 +16,15 @@ if (fs.existsSync(commandsPath)) {
     const commandFiles = fs.readdirSync(commandsPath).filter(f => f.endsWith('.js'));
     for (const file of commandFiles) {
         const command = require(`./commands/${file}`);
-        commands.push(command.data.toJSON());
+        const json = command.data.toJSON();
+        // Ajouter une note indiquant qu'il s'agit d'une commande admin si elle a des permissions par défaut
+        if (json.default_member_permissions) {
+            // N'ajoute le suffixe qu'une seule fois
+            if (!json.description.toLowerCase().includes('[admin]')) {
+                json.description += ' [ADMIN]';
+            }
+        }
+        commands.push(json);
         console.log(`📦 Commande lue : ${command.data.name}`);
     }
 }

@@ -8,6 +8,7 @@
   ButtonBuilder,
   ButtonStyle,
   MessageFlags,
+  PermissionFlagsBits,
 } = require('discord.js');
 
 function formatDuration(ms) {
@@ -64,6 +65,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('ping')
     .setDescription('Affiche la latence du bot et l’état de connexion Discord.')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .setDMPermission(false),
 
   async execute(interaction) {
