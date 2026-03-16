@@ -3,42 +3,30 @@ const fs      = require('fs');
 const path    = require('path');
 const client  = require('./client');
 
-// ─── Web server (keep-alive Render) ──────────────────────────────────────────
-
+// ── Keep-alive Render ─────────────────────────────────────────────────────────
 const app = express();
-app.get('/', (req, res) => res.send('Bot Eldoria running'));
-app.listen(3000, () => console.log('Web server ready'));
+app.get('/', (_, res) => res.send('Eldoria online'));
+app.listen(3000);
 
-// ─── Charger les commandes ────────────────────────────────────────────────────
-
+// ── Commandes ─────────────────────────────────────────────────────────────────
 client.commands = new Map();
-
-const commandsPath = path.join(__dirname, 'commands');
-if (fs.existsSync(commandsPath)) {
-    const commandFiles = fs.readdirSync(commandsPath).filter(f => f.endsWith('.js'));
-    for (const file of commandFiles) {
-        const command = require(`./commands/${file}`);
-        client.commands.set(command.data.name, command);
-        console.log(`📦 Commande chargée : ${command.data.name}`);
+const cmdDir = path.join(__dirname, 'commands');
+if (fs.existsSync(cmdDir)) {
+    for (const file of fs.readdirSync(cmdDir).filter(f => f.endsWith('.js'))) {
+        const cmd = require(`./commands/${file}`);
+        client.commands.set(cmd.data.name, cmd);
+        console.log(`📦 ${cmd.data.name}`);
     }
 }
 
-// ─── Charger les événements ───────────────────────────────────────────────────
-
-const eventsPath = path.join(__dirname, 'events');
-if (fs.existsSync(eventsPath)) {
-    const eventFiles = fs.readdirSync(eventsPath).filter(f => f.endsWith('.js'));
-    for (const file of eventFiles) {
-        const event = require(`./events/${file}`);
-        if (event.once) {
-            client.once(event.name, (...args) => event.execute(...args));
-        } else {
-            client.on(event.name, (...args) => event.execute(...args));
-        }
-        console.log(`⚡ Événement chargé : ${event.name}`);
+// ── Événements ────────────────────────────────────────────────────────────────
+const evtDir = path.join(__dirname, 'events');
+if (fs.existsSync(evtDir)) {
+    for (const file of fs.readdirSync(evtDir).filter(f => f.endsWith('.js'))) {
+        const evt = require(`./events/${file}`);
+        client[evt.once ? 'once' : 'on'](evt.name, (...args) => evt.execute(...args));
+        console.log(`⚡ ${evt.name}`);
     }
 }
-
-// ─── Login ────────────────────────────────────────────────────────────────────
 
 client.login(process.env.TOKEN);

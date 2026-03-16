@@ -1,19 +1,14 @@
 {
-  "name": "eldoria-bot",
-  "version": "1.0.0",
-  "description": "",
-  "main": "bot.js",
-  "scripts": {
-    "start": "node bot.js",
-    "deploy": "node deploy-commands.js"
-  },
-  "dependencies": {
-    "canvas": "^3.2.1",
-    "discord.js": "^14.25.1",
-    "express": "^5.2.1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs"
+    "name": "eldoria-bot",
+    "version": "1.0.0",
+    "main": "bot.js",
+    "scripts": {
+        "start": "node bot.js",
+        "deploy": "node deploy-commands.js"
+    },
+    "dependencies": {
+        "discord.js": "^14.25.1",
+        "express": "^5.2.1"
+    },
+    "type": "commonjs"
 }
