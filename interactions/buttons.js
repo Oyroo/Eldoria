@@ -12,6 +12,8 @@ const { pendingInputs }           = require('../utils/pending');
 const { getTickets, saveTickets } = require('../utils/tickets');
 const { generateTranscript }      = require('../utils/transcript');
 const {
+    buildConfigHomePanel,
+    buildWelcomePanel,
     buildMainPanel,
     buildCategoryPanel,
     buildDeleteConfirmPanel,
@@ -51,11 +53,54 @@ async function handleButton(interaction) {
     // NAVIGATION
     // ════════════════════════════════════════════════════════════════════════
 
+    if (id === 'cfg_back_home') {
+        return interaction.update({
+            components: [buildConfigHomePanel(icon)],
+            flags:      MessageFlags.IsComponentsV2,
+        });
+    }
+
     if (id === 'cfg_back') {
         return interaction.update({
             components: [buildMainPanel(icon)],
             flags:      MessageFlags.IsComponentsV2,
         });
+    }
+
+    if (id === 'cfg_welcome_set_welcome') {
+        pendingInputs[interaction.user.id] = {
+            type:   'set_welcome',
+            catKey: 'welcome',
+            token:  interaction.token,
+            appId:  interaction.client.application.id,
+            guildId: interaction.guildId,
+        };
+        const [container, actionRow] = buildAwaitingPanel('set_welcome', 'welcome');
+        return interaction.update({ components: [container, actionRow], flags: MessageFlags.IsComponentsV2 });
+    }
+
+    if (id === 'cfg_welcome_set_leave') {
+        pendingInputs[interaction.user.id] = {
+            type:   'set_leave',
+            catKey: 'welcome',
+            token:  interaction.token,
+            appId:  interaction.client.application.id,
+            guildId: interaction.guildId,
+        };
+        const [container, actionRow] = buildAwaitingPanel('set_leave', 'welcome');
+        return interaction.update({ components: [container, actionRow], flags: MessageFlags.IsComponentsV2 });
+    }
+
+    if (id === 'cfg_welcome_set_rules') {
+        pendingInputs[interaction.user.id] = {
+            type:   'set_rules',
+            catKey: 'welcome',
+            token:  interaction.token,
+            appId:  interaction.client.application.id,
+            guildId: interaction.guildId,
+        };
+        const [container, actionRow] = buildAwaitingPanel('set_rules', 'welcome');
+        return interaction.update({ components: [container, actionRow], flags: MessageFlags.IsComponentsV2 });
     }
 
     if (id.startsWith('cfg_open:')) {

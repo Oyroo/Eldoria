@@ -7,6 +7,9 @@ const CONFIG_PATH = path.join(__dirname, '..', 'config.json');
 if (!fs.existsSync(CONFIG_PATH)) {
     const initial = {
         guildId:          process.env.GUILD_ID ?? '',
+        welcomeChannelId: '',
+        leaveChannelId:   '',
+        rulesChannelId:   '',
         ticketCounter:    0,
         ticketCategories: {},
     };
@@ -18,6 +21,9 @@ const config = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'));
 
 // Garantir les champs minimum
 if (!config.guildId)          config.guildId          = process.env.GUILD_ID ?? '';
+if (!config.welcomeChannelId) config.welcomeChannelId = '';
+if (!config.leaveChannelId)   config.leaveChannelId   = '';
+if (!config.rulesChannelId)   config.rulesChannelId   = '';
 if (!config.ticketCategories) config.ticketCategories = {};
 if (!config.ticketCounter)    config.ticketCounter    = 0;
 

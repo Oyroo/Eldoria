@@ -2,6 +2,7 @@ const {
     ContainerBuilder, TextDisplayBuilder, SeparatorBuilder,
     SectionBuilder, ThumbnailBuilder,
     ActionRowBuilder, ButtonBuilder, ButtonStyle,
+    StringSelectMenuBuilder,
     EmbedBuilder,
 } = require('discord.js');
 
@@ -14,6 +15,155 @@ const ACCENT      = 0xd4a853;
 const ACCENT_WAIT = 0x5865f2;
 
 function statusIcon(value) { return value ? '🟢' : '🔴'; }
+
+// ─── Panel de configuration général ──────────────────────────────────────────
+
+function buildConfigHomePanel(guildIconURL = null) {
+    const container = new ContainerBuilder().setAccentColor(ACCENT);
+
+    // ── En-tête ───────────────────────────────────────────────────────────────
+    if (guildIconURL) {
+        container.addSectionComponents(
+            new SectionBuilder()
+                .addTextDisplayComponents(
+                    new TextDisplayBuilder().setContent(
+                        `# ⚙️  Configuration
+` +
+                        `-# Choisissez un système pour accéder à sa configuration.
+` +
+                        `-# Cette commande regroupe tous les paramètres du bot.`
+                    )
+                )
+                .setThumbnailAccessory(new ThumbnailBuilder().setURL(guildIconURL))
+        );
+    } else {
+        container.addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                `# ⚙️  Configuration
+` +
+                `-# Choisissez un système pour accéder à sa configuration.
+` +
+                `-# Cette commande regroupe tous les paramètres du bot.`
+            )
+        );
+    }
+
+    // ── Sélecteur de catégorie ───────────────────────────────────────────────
+    const select = new StringSelectMenuBuilder()
+        .setCustomId('config_selector')
+        .setPlaceholder('Choisissez une catégorie de configuration…')
+        .setMinValues(1)
+        .setMaxValues(1)
+        .addOptions([
+            { label: 'Accueil', value: 'home', emoji: '🏡', default: true },
+            { label: 'Arrivées & départs', value: 'welcome-goodbye', emoji: '👋' },
+            { label: 'Tickets', value: 'tickets', emoji: '🎟️' },
+            { label: 'Autres (bientôt)', value: 'coming-soon', emoji: '⏳' },
+        ]);
+
+    container
+        .addActionRowComponents(new ActionRowBuilder().addComponents(select))
+        .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2))
+        .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+            `🧩 *Sélectionnez une catégorie pour modifier ses paramètres.*\n` +
+            `🔎 Certains systèmes ne sont pas encore configurables via le panel : ils seront ajoutés prochainement.`
+        ));
+
+    // ── Liens utiles ─────────────────────────────────────────────────────────
+    container.addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2));
+
+    container.addActionRowComponents(
+        new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setStyle(ButtonStyle.Link)
+                .setLabel('Support Discord')
+                .setURL('https://discord.gg/3y4HWyFHPX'),
+            new ButtonBuilder()
+                .setStyle(ButtonStyle.Link)
+                .setLabel('Documentation')
+                .setURL('https://www.draftbot.fr/docs'),
+        )
+    );
+
+    return container;
+}
+
+function buildWelcomePanel(guildIconURL = null, errorMsg = null) {
+    const welcomeRef = config.welcomeChannelId ? `<#${config.welcomeChannelId}>` : '*Non défini*';
+    const leaveRef   = config.leaveChannelId   ? `<#${config.leaveChannelId}>`   : '*Non défini*';
+    const rulesRef   = config.rulesChannelId   ? `<#${config.rulesChannelId}>`   : '*Non défini*';
+
+    const container = new ContainerBuilder().setAccentColor(ACCENT);
+
+    if (errorMsg) {
+        container
+            .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                `> ❌  **Erreur** — ${errorMsg}`
+            ))
+            .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2));
+    }
+
+    if (guildIconURL) {
+        container.addSectionComponents(
+            new SectionBuilder()
+                .addTextDisplayComponents(
+                    new TextDisplayBuilder().setContent(
+                        `# 👋  Arrivées & départs
+` +
+                        `-# Configure les salons utilisés pour les messages de bienvenue et de départ.`
+                    )
+                )
+                .setThumbnailAccessory(new ThumbnailBuilder().setURL(guildIconURL))
+        );
+    } else {
+        container.addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                `# 👋  Arrivées & départs
+` +
+                `-# Configure les salons utilisés pour les messages de bienvenue et de départ.`
+            )
+        );
+    }
+
+    container
+        .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2))
+        .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+            `### Salons configurés
+` +
+            `• 🎉 Bienvenue : ${welcomeRef}
+` +
+            `• 👋 Départs : ${leaveRef}
+` +
+            `• 📜 Règles : ${rulesRef}`
+        ))
+        .addActionRowComponents(
+            new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                    .setCustomId('cfg_welcome_set_welcome')
+                    .setLabel('Salon bienvenue')
+                    .setEmoji('🎉')
+                    .setStyle(ButtonStyle.Secondary),
+                new ButtonBuilder()
+                    .setCustomId('cfg_welcome_set_leave')
+                    .setLabel('Salon départ')
+                    .setEmoji('👋')
+                    .setStyle(ButtonStyle.Secondary),
+                new ButtonBuilder()
+                    .setCustomId('cfg_welcome_set_rules')
+                    .setLabel('Salon règles')
+                    .setEmoji('📜')
+                    .setStyle(ButtonStyle.Secondary),
+            )
+        );
+
+    const actionRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId('cfg_back_home').setLabel('Accueil').setEmoji('🏡').setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId('cfg_back').setLabel('Tickets').setEmoji('🎟️').setStyle(ButtonStyle.Secondary),
+    );
+
+    return [container, actionRow];
+}
+
 
 // ─── Panel de ticket public ───────────────────────────────────────────────────
 
@@ -268,8 +418,25 @@ function buildAwaitingPanel(type, catKey) {
             what:  'Envoie le **#salon** ou son **ID**',
             hint:  'L\'embed et le bouton d\'ouverture seront envoyés dans ce salon.',
         },
+        set_welcome: {
+            emoji: '🎉',
+            title: 'Salon de bienvenue',
+            what:  'Envoie le **#salon** ou son **ID**',
+            hint:  'Ce salon recevra les messages de bienvenue.',
+        },
+        set_leave: {
+            emoji: '👋',
+            title: 'Salon de départ',
+            what:  'Envoie le **#salon** ou son **ID**',
+            hint:  'Ce salon recevra les messages de départ.',
+        },
+        set_rules: {
+            emoji: '📜',
+            title: 'Salon des règles',
+            what:  'Envoie le **#salon** ou son **ID**',
+            hint:  'Ce salon sera utilisé pour le bouton “Voir les règles”.',
+        },
     };
-
     const info = infos[type] ?? { emoji: '⌨️', title: 'Saisie', what: 'Envoie ta réponse.', hint: '' };
 
     const container = new ContainerBuilder()
@@ -299,6 +466,8 @@ function buildAwaitingPanel(type, catKey) {
 }
 
 module.exports = {
+    buildConfigHomePanel,
+    buildWelcomePanel,
     buildTicketEmbed,
     buildTicketOpenRow,
     buildMainPanel,

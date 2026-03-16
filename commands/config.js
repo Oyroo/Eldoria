@@ -1,17 +1,17 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
-const { buildMainPanel } = require('../utils/builders');
+const { buildConfigHomePanel } = require('../utils/builders');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('ticket-config')
-        .setDescription('Ouvre le panel de configuration des tickets (utilise /config pour tout le bot)')
-        .setDefaultMemberPermissions('8'),
+        .setName('config')
+        .setDescription('Ouvre le panneau de configuration du bot.')
+        .setDefaultMemberPermissions('8')
+        .setDMPermission(false),
 
     async execute(interaction) {
         const iconURL = interaction.guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
-
         await interaction.reply({
-            components: [buildMainPanel(iconURL)],
+            components: [buildConfigHomePanel(iconURL)],
             flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
         });
     },

@@ -1,7 +1,7 @@
 const { Events, ChannelType }       = require('discord.js');
 const { config, saveConfig }        = require('../utils/config');
 const { pendingInputs, patchPanel } = require('../utils/pending');
-const { buildCategoryPanel }        = require('../utils/builders');
+const { buildConfigHomePanel, buildWelcomePanel, buildCategoryPanel } = require('../utils/builders');
 const { buildTicketEmbed, buildTicketOpenRow } = require('../utils/builders');
 
 module.exports = {
@@ -20,6 +20,13 @@ module.exports = {
 
         if (input.toLowerCase() === 'annuler') {
             delete pendingInputs[message.author.id];
+
+            if (pending.catKey === 'welcome') {
+                const [container, actionRow] = buildWelcomePanel(icon);
+                await patchPanel(pending.token, pending.appId, [container, actionRow]);
+                return;
+            }
+
             const [container, actionRow] = buildCategoryPanel(pending.catKey, null, icon);
             await patchPanel(pending.token, pending.appId, [container, actionRow]);
             return;
@@ -60,6 +67,36 @@ module.exports = {
             } catch {
                 errorMsg = 'Impossible d\'envoyer dans ce salon.';
             }
+        } else if (pending.type === 'set_welcome') {
+            try {
+                await message.guild.channels.fetch(resolvedId);
+                config.welcomeChannelId = resolvedId;
+                saveConfig();
+            } catch {
+                errorMsg = 'Salon introuvable avec cet ID.';
+            }
+        } else if (pending.type === 'set_leave') {
+            try {
+                await message.guild.channels.fetch(resolvedId);
+                config.leaveChannelId = resolvedId;
+                saveConfig();
+            } catch {
+                errorMsg = 'Salon introuvable avec cet ID.';
+            }
+        } else if (pending.type === 'set_rules') {
+            try {
+                await message.guild.channels.fetch(resolvedId);
+                config.rulesChannelId = resolvedId;
+                saveConfig();
+            } catch {
+                errorMsg = 'Salon introuvable avec cet ID.';
+            }
+        }
+
+        if (pending.catKey === 'welcome') {
+            const [container, actionRow] = buildWelcomePanel(icon, errorMsg);
+            await patchPanel(pending.token, pending.appId, [container, actionRow]);
+            return;
         }
 
         const [container, actionRow] = buildCategoryPanel(pending.catKey, errorMsg, icon);

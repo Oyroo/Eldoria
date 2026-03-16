@@ -21,6 +21,13 @@ module.exports = {
                 return;
             }
 
+            // ── Sélecteurs (choix dans le panneau de configuration) ─────────────
+            if (interaction.isStringSelectMenu()) {
+                const { handleSelect } = require('../interactions/selects');
+                await handleSelect(interaction);
+                return;
+            }
+
             // ── Boutons ───────────────────────────────────────────────────────
             if (interaction.isButton()) {
                 const { handleButton } = require('../interactions/buttons');
