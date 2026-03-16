@@ -20,7 +20,7 @@ module.exports = {
 
             if (interaction.isStringSelectMenu()) {
                 if (interaction.customId === 'config_rp_select') {
-                    const { handleSelectRp } = require('../interactions/selects_rp');
+                    const { handleSelectRp } = require('../interactions/selects_rp.Js');
                     await handleSelectRp(interaction);
                     return;
                 }
