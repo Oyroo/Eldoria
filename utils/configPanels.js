@@ -7,10 +7,10 @@ const {
 
 const Flags = require('./flags');
 
-const GOLD = 0xd4a853;
-const GREY = 0x2b2d31;
+// ─── Modules ──────────────────────────────────────────────────────────────────
 
 const MODULES = [
+    { value: 'home',       label: 'Accueil',            emoji: '🏡', available: true  },
     { value: 'tickets',    label: 'Tickets',            emoji: '🎫', available: true  },
     { value: 'moderation', label: 'Modération',         emoji: '🔨', available: false },
     { value: 'logs',       label: 'Logs',               emoji: '🗃️', available: false },
@@ -21,15 +21,15 @@ const MODULES = [
     { value: 'report',     label: 'Signalements',       emoji: '🚨', available: false },
 ];
 
-function sep() {
-    return new SeparatorBuilder().setDivider(true).setSpacing(2);
-}
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function selectMenu(current = null) {
+function sep() { return new SeparatorBuilder().setDivider(true).setSpacing(2); }
+
+function selectRow(current = 'home') {
     return new ActionRowBuilder().addComponents(
         new StringSelectMenuBuilder()
             .setCustomId('config_select')
-            .setPlaceholder('Choisir un module…')
+            .setPlaceholder('Choisissez une catégorie de commandes…')
             .addOptions(
                 MODULES.map(m =>
                     new StringSelectMenuOptionBuilder()
@@ -37,55 +37,67 @@ function selectMenu(current = null) {
                         .setValue(m.value)
                         .setEmoji(m.emoji)
                         .setDefault(m.value === current)
-                        .setDescription(m.available ? 'Disponible' : 'Bientôt disponible')
                 )
             )
     );
 }
 
-function homeButton() {
+// Boutons liens en bas (comme DraftBot : Panel Web / Support / Docs)
+function linksRow() {
     return new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-            .setCustomId('config_home')
-            .setLabel('Accueil')
-            .setEmoji('🏡')
-            .setStyle(ButtonStyle.Secondary)
+        new ButtonBuilder().setStyle(ButtonStyle.Link).setURL('https://discord.gg/').setLabel('Support Discord'),
+        new ButtonBuilder().setStyle(ButtonStyle.Link).setURL('https://github.com/').setLabel('GitHub'),
     );
 }
 
 // ─── Accueil ──────────────────────────────────────────────────────────────────
 
 function homePanel(guild) {
-    const icon  = guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
+    const icon       = guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
+    const guildName  = guild?.name ?? 'Serveur';
+    const memberCount = guild?.memberCount?.toLocaleString('fr-FR') ?? '—';
+    const createdAt  = guild?.createdAt
+        ? `<t:${Math.floor(guild.createdAt.getTime() / 1000)}:D>`
+        : '—';
+
     const { config } = require('./config');
-    const total = Object.keys(config.ticketCategories ?? {}).length;
+    const totalEmbeds = Object.keys(config.ticketCategories ?? {}).length;
 
-    const c = new ContainerBuilder().setAccentColor(GOLD);
+    const c = new ContainerBuilder().setAccentColor(0xd4a853);
 
-    const header = `# ⚙️  Configuration\n-# Sélectionne un module dans le menu ci-dessous.`;
+    const headerText =
+        `# ⚙️  Configuration de ${guildName}\n` +
+        `Bienvenue dans le panel de configuration d'Eldoria.\n` +
+        `Grâce à cette commande, vous pourrez configurer les différents systèmes proposés dans le sélecteur ci-dessus.`;
 
     if (icon) {
         c.addSectionComponents(
             new SectionBuilder()
-                .addTextDisplayComponents(new TextDisplayBuilder().setContent(header))
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(headerText))
                 .setThumbnailAccessory(new ThumbnailBuilder().setURL(icon))
         );
     } else {
-        c.addTextDisplayComponents(new TextDisplayBuilder().setContent(header));
+        c.addTextDisplayComponents(new TextDisplayBuilder().setContent(headerText));
     }
 
     c.addSeparatorComponents(sep())
      .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-        [
-            `🎫  **Tickets** · ${total} embed${total !== 1 ? 's' : ''} configuré${total !== 1 ? 's' : ''}`,
-            `🔨  **Modération** · *Bientôt disponible*`,
-            `🗃️  **Logs** · *Bientôt disponible*`,
-            `👋  **Arrivées & départs** · *Bientôt disponible*`,
-        ].join('\n')
+        `### Informations du serveur\n` +
+        `> 👥  **Membres** : ${memberCount}\n` +
+        `> 📅  **Créé le** : ${createdAt}`
+     ))
+     .addSeparatorComponents(sep())
+     .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+        `### État des modules\n` +
+        `🎫  **Tickets** — ${totalEmbeds} embed${totalEmbeds !== 1 ? 's' : ''} configuré${totalEmbeds !== 1 ? 's' : ''}\n` +
+        `🔨  **Modération** — *Bientôt disponible*\n` +
+        `🗃️  **Logs** — *Bientôt disponible*\n` +
+        `👋  **Arrivées & départs** — *Bientôt disponible*\n` +
+        `📈  **Niveaux** — *Bientôt disponible*`
      ));
 
     return {
-        components: [selectMenu(null), c],
+        components: [selectRow('home'), c, linksRow()],
         flags: Flags.CV2_Ephemeral,
     };
 }
@@ -99,58 +111,64 @@ function ticketsPanel(guild) {
     const keys   = Object.keys(cats);
     const total  = keys.length;
 
-    const c = new ContainerBuilder().setAccentColor(GOLD);
+    const c = new ContainerBuilder().setAccentColor(0xd4a853);
 
-    const header = `# 🎫  Tickets\n-# ${total === 0 ? 'Aucun embed configuré' : `${total} embed${total !== 1 ? 's' : ''} configuré${total !== 1 ? 's' : ''}`}`;
+    const headerText =
+        `# 🎫  Tickets\n` +
+        `Configurez le système de tickets de votre serveur.\n` +
+        `Chaque embed correspond à un type de demande avec ses propres paramètres.`;
 
     if (icon) {
         c.addSectionComponents(
             new SectionBuilder()
-                .addTextDisplayComponents(new TextDisplayBuilder().setContent(header))
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(headerText))
                 .setThumbnailAccessory(new ThumbnailBuilder().setURL(icon))
         );
     } else {
-        c.addTextDisplayComponents(new TextDisplayBuilder().setContent(header));
-    }
-
-    if (total === 0) {
-        c.addSeparatorComponents(sep())
-         .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-            `Aucun embed de tickets configuré.\n-# Utilise le bouton ci-dessous pour commencer.`
-         ));
-    } else {
-        for (const key of keys) {
-            const e      = cats[key];
-            const catOk  = e.categoryId          ? '🟢' : '🔴';
-            const tsOk   = e.transcriptChannelId  ? '🟢' : '🔴';
-            const catRef = e.categoryId          ? `<#${e.categoryId}>`          : '—';
-            const tsRef  = e.transcriptChannelId ? `<#${e.transcriptChannelId}>` : '—';
-
-            c.addSeparatorComponents(sep())
-             .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                `### ${e.label}\n` +
-                `${catOk}  Catégorie · ${catRef}\n` +
-                `${tsOk}  Transcripts · ${tsRef}\n` +
-                `-# 🎫 *${e.buttonLabel}*`
-             ));
-        }
+        c.addTextDisplayComponents(new TextDisplayBuilder().setContent(headerText));
     }
 
     c.addSeparatorComponents(sep())
      .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-        `-# Clique sur **Configurer** pour gérer les embeds de tickets.`
+        `### Paramètres\n` +
+        `> **Embeds configurés** : ${total}\n` +
+        `> **Tickets ouverts** : ${Object.keys(require('./tickets').get() ?? {}).length}`
      ));
+
+    if (total > 0) {
+        c.addSeparatorComponents(sep())
+         .addTextDisplayComponents(new TextDisplayBuilder().setContent(`### Embeds actifs`));
+
+        for (const key of keys) {
+            const e      = cats[key];
+            const catOk  = e.categoryId          ? '🟢' : '🔴';
+            const tsOk   = e.transcriptChannelId  ? '🟢' : '🔴';
+            const catRef = e.categoryId          ? `<#${e.categoryId}>`          : '*Non définie*';
+            const tsRef  = e.transcriptChannelId ? `<#${e.transcriptChannelId}>` : '*Non défini*';
+
+            c.addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                `\n**${e.label}**\n` +
+                `${catOk} Catégorie · ${catRef}  ${tsOk} Transcripts · ${tsRef}\n` +
+                `-# 🎫 *${e.buttonLabel}*`
+            ));
+        }
+    } else {
+        c.addSeparatorComponents(sep())
+         .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+            `> ℹ️  Aucun embed configuré. Utilise le bouton ci-dessous pour commencer.`
+         ));
+    }
 
     const configRow = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
             .setCustomId('config_tickets_open')
-            .setLabel('Configurer')
+            .setLabel('Gérer les embeds de tickets')
             .setEmoji('✏️')
             .setStyle(ButtonStyle.Primary),
     );
 
     return {
-        components: [selectMenu('tickets'), c, homeButton(), configRow],
+        components: [selectRow('tickets'), c, configRow, linksRow()],
         flags: Flags.CV2_Ephemeral,
     };
 }
@@ -161,27 +179,30 @@ function unavailablePanel(module, guild) {
     const icon = guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
     const m    = MODULES.find(x => x.value === module) ?? { emoji: '⚙️', label: module };
 
-    const c = new ContainerBuilder().setAccentColor(GREY);
+    const c = new ContainerBuilder().setAccentColor(0x4f545c);
 
-    const header = `# ${m.emoji}  ${m.label}\n-# Ce module n'est pas encore disponible.`;
+    const headerText =
+        `# ${m.emoji}  ${m.label}\n` +
+        `Ce module n'est pas encore disponible sur Eldoria.`;
 
     if (icon) {
         c.addSectionComponents(
             new SectionBuilder()
-                .addTextDisplayComponents(new TextDisplayBuilder().setContent(header))
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(headerText))
                 .setThumbnailAccessory(new ThumbnailBuilder().setURL(icon))
         );
     } else {
-        c.addTextDisplayComponents(new TextDisplayBuilder().setContent(header));
+        c.addTextDisplayComponents(new TextDisplayBuilder().setContent(headerText));
     }
 
     c.addSeparatorComponents(sep())
      .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-        `Ce module est en cours de développement.\n-# Reviens plus tard ou sélectionne un autre module.`
+        `> Ce module est en cours de développement et sera disponible prochainement.\n` +
+        `> Sélectionne un autre module dans le menu ci-dessus.`
      ));
 
     return {
-        components: [selectMenu(module), c, homeButton()],
+        components: [selectRow(module), c, linksRow()],
         flags: Flags.CV2_Ephemeral,
     };
 }
@@ -189,8 +210,8 @@ function unavailablePanel(module, guild) {
 // ─── Dispatcher ──────────────────────────────────────────────────────────────
 
 function buildConfigMessage(module = 'home', guild = null) {
-    if (module === 'home')         return homePanel(guild);
-    if (module === 'tickets')      return ticketsPanel(guild);
+    if (module === 'home')    return homePanel(guild);
+    if (module === 'tickets') return ticketsPanel(guild);
     return unavailablePanel(module, guild);
 }
 
