@@ -1,11 +1,12 @@
-const { Events, MessageFlags } = require('discord.js');
-const Flags = require('../utils/flags');
+const { Events }  = require('discord.js');
+const Flags       = require('../utils/flags');
 
 module.exports = {
     name: Events.InteractionCreate,
 
     async execute(interaction) {
         try {
+
             if (interaction.isAutocomplete()) {
                 const cmd = interaction.client.commands.get(interaction.commandName);
                 if (cmd?.autocomplete) await cmd.autocomplete(interaction);
@@ -18,7 +19,19 @@ module.exports = {
                 return;
             }
 
+            if (interaction.isStringSelectMenu()) {
+                const { handleSelect } = require('../interactions/selects');
+                await handleSelect(interaction);
+                return;
+            }
+
             if (interaction.isButton()) {
+                if (interaction.customId === 'config_tickets_open') {
+                    const { mainPanel } = require('../utils/builders');
+                    const icon = interaction.guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
+                    return interaction.update({ components: [mainPanel(icon)], flags: Flags.CV2 });
+                }
+
                 const { handleButton } = require('../interactions/buttons');
                 await handleButton(interaction);
                 return;
