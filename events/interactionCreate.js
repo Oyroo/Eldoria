@@ -34,8 +34,12 @@ module.exports = {
                 // Ouvre le panel ticket-config depuis /config
                 if (interaction.customId === 'config_tickets_open') {
                     const { mainPanel } = require('../utils/builders');
+                    const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
                     const icon = interaction.guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
-                    return interaction.update({ components: [mainPanel(icon)], flags: Flags.CV2 });
+                    const homeBtn = new ActionRowBuilder().addComponents(
+                        new ButtonBuilder().setCustomId('config_home').setLabel('Accueil').setEmoji('🏡').setStyle(ButtonStyle.Secondary)
+                    );
+                    return interaction.update({ components: [mainPanel(icon), homeBtn], flags: Flags.CV2 });
                 }
 
                 if (interaction.customId === 'cfg_back_to_config') {
