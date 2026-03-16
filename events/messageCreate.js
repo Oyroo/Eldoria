@@ -83,6 +83,7 @@ module.exports = {
             } catch {
                 errorMsg = 'Salon introuvable avec cet ID.';
             }
+        }
 
         if (pending.catKey === 'welcome') {
             const [container, actionRow] = buildWelcomePanel(icon, errorMsg);
