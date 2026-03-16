@@ -1,63 +1,45 @@
-const {
-    SlashCommandBuilder, MessageFlags, ChannelType,
-    ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, SectionBuilder, ThumbnailBuilder,
-    SeparatorSpacingSize,
-} = require('discord.js');
+﻿const { SlashCommandBuilder, ContainerBuilder, SectionBuilder, TextDisplayBuilder, SeparatorBuilder, ThumbnailBuilder } = require('discord.js');
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName('serverinfo')
-        .setDescription('Affiche les informations du serveur'),
+  data: new SlashCommandBuilder()
+    .setName('serverinfo')
+    .setDescription('Affiche les informations du serveur.'),
 
-    async execute(interaction) {
-        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  async execute(interaction) {
+    const guild = interaction.guild;
+    if (!guild) {
+      return interaction.reply({ content: "Cette commande doit être utilisée dans un serveur.", ephemeral: true });
+    }
 
-        const guild = interaction.guild;
-        await guild.fetch();
+    await guild.fetch();
+    const owner = await guild.fetchOwner();
+    const icon = guild.iconURL({ size: 256 }) ?? null;
 
-        const owner   = await guild.fetchOwner();
-        const ch      = guild.channels.cache;
-        const iconURL = guild.iconURL({ size: 256, extension: 'png' })
-            ?? 'https://cdn.discordapp.com/embed/avatars/0.png';
+    const verLabels = { 0: 'Aucune', 1: 'Faible', 2: 'Moyenne', 3: 'Élevée', 4: 'Très élevée' };
 
-        const verLabels = { 0:'Aucune', 1:'Faible', 2:'Moyenne', 3:'Élevée', 4:'Très élevée' };
-        const bstLabels = { 0:'Aucun', 1:'Niveau 1', 2:'Niveau 2', 3:'Niveau 3' };
-
-        const container = new ContainerBuilder()
-            .setAccentColor(0xd4a853)
-            .addSectionComponents(
-                new SectionBuilder()
-                    .addTextDisplayComponents(
-                        new TextDisplayBuilder().setContent(`# 🌐 ${guild.name}\n-# Identifiant : \`${guild.id}\``)
-                    )
-                    .setThumbnailAccessory(new ThumbnailBuilder().setURL(iconURL))
+    const container = new ContainerBuilder()
+      .setAccentColor(0x5865f2)
+      .addSectionComponents(
+        new SectionBuilder()
+          .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+              `# 🌐 ${guild.name}\n` +
+              `-# Identifiant : \`${guild.id}\``
             )
-            .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
-            .addTextDisplayComponents(new TextDisplayBuilder().setContent([
-                `### 👑 Informations générales`,
-                `👑  **Propriétaire** : ${owner.user} (\`${owner.id}\`)`,
-                `👥  **Membres** : **${guild.memberCount.toLocaleString('fr-FR')}**`,
-                `🎭  **Rôles** : **${guild.roles.cache.size - 1}**`,
-                `📅  **Création du serveur** : <t:${Math.floor(guild.createdTimestamp / 1000)}:D>`,
-                `🔐  **Niveau de vérification** : **${verLabels[guild.verificationLevel] ?? 'Inconnue'}**`,
-            ].join('\n')))
-            .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
-            .addTextDisplayComponents(new TextDisplayBuilder().setContent([
-                `### 📂 Salons`,
-                `💬  **Salons textuels** : **${ch.filter(c => c.type === ChannelType.GuildText).size}**`,
-                `🔊  **Salons vocaux** : **${ch.filter(c => c.type === ChannelType.GuildVoice).size}**`,
-                `📋  **Forums** : **${ch.filter(c => c.type === ChannelType.GuildForum).size}**`,
-                `📁  **Catégories** : **${ch.filter(c => c.type === ChannelType.GuildCategory).size}**`,
-            ].join('\n')))
-            .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
-            .addTextDisplayComponents(new TextDisplayBuilder().setContent([
-                `### 🚀 Boosts du serveur`,
-                `✨  **Niveau actuel** : **${bstLabels[guild.premiumTier] ?? 'Inconnu'}**`,
-                `🚀  **Nombre de boosts** : **${guild.premiumSubscriptionCount ?? 0}**`,
-            ].join('\n')));
+          )
+          .setThumbnailAccessory(new ThumbnailBuilder().setURL(icon))
+      )
+      .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2))
+      .addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+          `**👑 Propriétaire** : ${owner.user.tag} (${owner.id})\n` +
+          `**👥 Membres** : ${guild.memberCount.toLocaleString('fr-FR')}\n` +
+          `**🎭 Rôles** : ${guild.roles.cache.size - 1}\n` +
+          `**📅 Création** : <t:${Math.floor(guild.createdTimestamp / 1000)}:D>\n` +
+          `**🔐 Vérification** : ${verLabels[guild.verificationLevel] ?? 'Inconnue'}`
+        )
+      );
 
-        await interaction.editReply({
-            components: [container],
-        });
-    },
+    await interaction.reply({ components: [container], ephemeral: true });
+  },
 };

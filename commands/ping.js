@@ -1,4 +1,4 @@
-﻿const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+﻿const { SlashCommandBuilder, ContainerBuilder, SectionBuilder, TextDisplayBuilder, SeparatorBuilder, ThumbnailBuilder } = require('discord.js');
 
 function formatDuration(ms) {
   const totalSeconds = Math.floor(ms / 1000);
@@ -17,9 +17,7 @@ function formatDuration(ms) {
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('ping')
-    .setDescription('Affiche la latence du bot et l’état de connexion Discord.')
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-    .setDMPermission(false),
+    .setDescription('Affiche la latence du bot et l’état de connexion Discord.'),
 
   async execute(interaction) {
     const now = Date.now();
@@ -27,19 +25,32 @@ module.exports = {
     const apiLatency = Math.round(interaction.client.ws.ping);
     const uptime = formatDuration(interaction.client.uptime ?? 0);
 
-    const embed = new EmbedBuilder()
-      .setTitle('🏓 Pong !')
-      .setColor(0x5865f2)
-      .addFields(
-        { name: '⏱️ Latence', value: `Message : **${msgLatency}ms**\nAPI : **${apiLatency}ms**`, inline: true },
-        { name: '📡 Uptime', value: `**${uptime}**`, inline: true },
-        { name: '🧩 Versions', value: `discord.js : **${require('discord.js').version}**\nNode.js : **${process.versions.node}**` }
+    const container = new ContainerBuilder()
+      .setAccentColor(0x5865f2)
+      .addSectionComponents(
+        new SectionBuilder()
+          .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+              `# 🏓 Ping\n` +
+              `-# Ce panneau utilise **Components V2**.`
+            )
+          )
+          .setThumbnailAccessory(new ThumbnailBuilder().setURL(interaction.client.user.displayAvatarURL({ size: 256 })))
       )
-      .setFooter({ text: 'Eldoria Bot • Ping' });
+      .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2))
+      .addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+          `### Latence\n` +
+          `• Message : **${msgLatency}ms**\n` +
+          `• API : **${apiLatency}ms**\n\n` +
+          `### Uptime\n` +
+          `• **${uptime}**\n\n` +
+          `### Versions\n` +
+          `• discord.js : **${require('discord.js').version}**\n` +
+          `• Node.js : **${process.versions.node}**`
+        )
+      );
 
-    await interaction.reply({
-      embeds: [embed],
-      ephemeral: true,
-    });
+    await interaction.reply({ components: [container], ephemeral: true });
   },
 };

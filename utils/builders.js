@@ -1,4 +1,4 @@
-const {
+﻿const {
     ContainerBuilder, TextDisplayBuilder, SeparatorBuilder,
     SectionBuilder, ThumbnailBuilder,
     ActionRowBuilder, ButtonBuilder, ButtonStyle,
@@ -9,46 +9,30 @@ const {
 const { config }             = require('./config');
 const { colorInt, intToHex } = require('./helpers');
 
-// ─── Constantes ───────────────────────────────────────────────────────────────
+const ACCENT = 0xd4a853;
 
-const ACCENT      = 0xd4a853;
-const ACCENT_WAIT = 0x5865f2;
-
-function statusIcon(value) { return value ? '🟢' : '🔴'; }
-
-// ─── Panel de configuration général ──────────────────────────────────────────
+function statusIcon(value) {
+    return value ? '🟢' : '🔴';
+}
 
 function buildConfigHomePanel(guildIconURL = null) {
     const container = new ContainerBuilder().setAccentColor(ACCENT);
 
-    // ── En-tête ───────────────────────────────────────────────────────────────
+    const headerText =
+        `# ⚙️  Configuration\n` +
+        `-# Choisissez un système pour accéder à sa configuration.\n` +
+        `-# Cette commande regroupe tous les paramètres du bot.`;
+
     if (guildIconURL) {
         container.addSectionComponents(
             new SectionBuilder()
-                .addTextDisplayComponents(
-                    new TextDisplayBuilder().setContent(
-                        `# ⚙️  Configuration
-` +
-                        `-# Choisissez un système pour accéder à sa configuration.
-` +
-                        `-# Cette commande regroupe tous les paramètres du bot.`
-                    )
-                )
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(headerText))
                 .setThumbnailAccessory(new ThumbnailBuilder().setURL(guildIconURL))
         );
     } else {
-        container.addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
-                `# ⚙️  Configuration
-` +
-                `-# Choisissez un système pour accéder à sa configuration.
-` +
-                `-# Cette commande regroupe tous les paramètres du bot.`
-            )
-        );
+        container.addTextDisplayComponents(new TextDisplayBuilder().setContent(headerText));
     }
 
-    // ── Sélecteur de catégorie ───────────────────────────────────────────────
     const select = new StringSelectMenuBuilder()
         .setCustomId('config_selector')
         .setPlaceholder('Choisissez une catégorie de configuration…')
@@ -69,9 +53,7 @@ function buildConfigHomePanel(guildIconURL = null) {
             `🔎 Certains systèmes ne sont pas encore configurables via le panel : ils seront ajoutés prochainement.`
         ));
 
-    // ── Liens utiles ─────────────────────────────────────────────────────────
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2));
-
     container.addActionRowComponents(
         new ActionRowBuilder().addComponents(
             new ButtonBuilder()
@@ -101,8 +83,7 @@ function buildWelcomePanel(guildIconURL = null, errorMsg = null) {
     }
 
     const headerText =
-        `# 👋  Arrivées & départs
-` +
+        `# 👋  Arrivées & départs\n` +
         `-# Configure les salons utilisés pour les messages de bienvenue et de départ.`;
 
     if (guildIconURL) {
@@ -116,17 +97,11 @@ function buildWelcomePanel(guildIconURL = null, errorMsg = null) {
     }
 
     const statusText =
-        `### Salons configurés
-` +
-        `• 🎉 Bienvenue : ${welcomeRef}
-` +
-        `• 👋 Départs : ${leaveRef}
-
-` +
-        `### Textes (aperçu)
-` +
-        `• Bienvenue : ${config.welcomeText}
-` +
+        `### Salons configurés\n` +
+        `• 🎉 Bienvenue : ${welcomeRef}\n` +
+        `• 👋 Départs : ${leaveRef}\n\n` +
+        `### Textes (aperçu)\n` +
+        `• Bienvenue : ${config.welcomeText}\n` +
         `• Départ : ${config.leaveText}`;
 
     container
@@ -166,9 +141,6 @@ function buildWelcomePanel(guildIconURL = null, errorMsg = null) {
     return [container, actionRow];
 }
 
-
-// ─── Panel de ticket public ───────────────────────────────────────────────────
-
 function buildTicketEmbed(catKey) {
     const cat = config.ticketCategories[catKey];
     return new EmbedBuilder()
@@ -189,46 +161,27 @@ function buildTicketOpenRow(catKey) {
     );
 }
 
-// ─── Menu principal ───────────────────────────────────────────────────────────
-// guildIconURL : URL de l'icône du serveur (optionnel)
-
 function buildMainPanel(guildIconURL = null) {
-    const cats    = config.ticketCategories;
+    const cats = config.ticketCategories;
     const catKeys = Object.keys(cats);
-    const total   = catKeys.length;
+    const total = catKeys.length;
 
     const container = new ContainerBuilder().setAccentColor(ACCENT);
 
-    // ── En-tête avec thumbnail ────────────────────────────────────────────────
+    const headerText =
+        `# 🎫  Gestion des tickets\n` +
+        `-# ${total === 0 ? 'Aucun embed — crée-en un pour commencer' : `${total} embed${total > 1 ? 's' : ''} configuré${total > 1 ? 's' : ''}`}`;
+
     if (guildIconURL) {
         container.addSectionComponents(
             new SectionBuilder()
-                .addTextDisplayComponents(
-                    new TextDisplayBuilder().setContent(
-                        `# 🎫  Gestion des tickets\n` +
-                        `-# ${total === 0
-                            ? 'Aucun embed — crée-en un pour commencer'
-                            : `${total} embed${total > 1 ? 's' : ''} configuré${total > 1 ? 's' : ''}`
-                        }`
-                    )
-                )
-                .setThumbnailAccessory(
-                    new ThumbnailBuilder().setURL(guildIconURL)
-                )
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(headerText))
+                .setThumbnailAccessory(new ThumbnailBuilder().setURL(guildIconURL))
         );
     } else {
-        container.addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
-                `# 🎫  Gestion des tickets\n` +
-                `-# ${total === 0
-                    ? 'Aucun embed — crée-en un pour commencer'
-                    : `${total} embed${total > 1 ? 's' : ''} configuré${total > 1 ? 's' : ''}`
-                }`
-            )
-        );
+        container.addTextDisplayComponents(new TextDisplayBuilder().setContent(headerText));
     }
 
-    // ── Aucun embed ──────────────────────────────────────────────────────
     if (total === 0) {
         container
             .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2))
@@ -238,12 +191,11 @@ function buildMainPanel(guildIconURL = null) {
             ));
     }
 
-    // ── Embeds ────────────────────────────────────────────────────────────
     for (const catKey of catKeys) {
-        const c        = cats[catKey];
+        const c = cats[catKey];
         const colorHex = typeof c.color === 'number' ? intToHex(c.color) : (c.color ?? '#5865f2');
-        const catRef   = c.categoryId          ? `<#${c.categoryId}>`          : '—';
-        const tsRef    = c.transcriptChannelId ? `<#${c.transcriptChannelId}>` : '—';
+        const catRef = c.categoryId ? `<#${c.categoryId}>` : '—';
+        const tsRef = c.transcriptChannelId ? `<#${c.transcriptChannelId}>` : '—';
 
         container
             .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2))
@@ -264,7 +216,6 @@ function buildMainPanel(guildIconURL = null) {
             );
     }
 
-    // ── Pied ──────────────────────────────────────────────────────────────────
     container
         .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2))
         .addActionRowComponents(
@@ -285,16 +236,13 @@ function buildMainPanel(guildIconURL = null) {
     return container;
 }
 
-// ─── Page embed ───────────────────────────────────────────────────────────
-
 function buildCategoryPanel(catKey, errorMsg = null, guildIconURL = null) {
-    const cat      = config.ticketCategories[catKey];
+    const cat = config.ticketCategories[catKey];
     const colorHex = typeof cat.color === 'number' ? intToHex(cat.color) : (cat.color ?? '#5865f2');
-    const catRef   = cat.categoryId          ? `<#${cat.categoryId}>`          : '*Non définie*';
-    const tsRef    = cat.transcriptChannelId ? `<#${cat.transcriptChannelId}>` : '*Non défini*';
+    const catRef = cat.categoryId ? `<#${cat.categoryId}>` : '*Non définie*';
+    const tsRef = cat.transcriptChannelId ? `<#${cat.transcriptChannelId}>` : '*Non défini*';
 
-    // Aperçu live
-    const descLines   = (cat.description ?? '').split('\n').map(l => `> ${l}`).join('\n');
+    const descLines = (cat.description ?? '').split('\n').map(l => `> ${l}`).join('\n');
     const livePreview =
         `> ### ${cat.title}\n` +
         `${descLines}\n` +
@@ -303,7 +251,6 @@ function buildCategoryPanel(catKey, errorMsg = null, guildIconURL = null) {
 
     const container = new ContainerBuilder().setAccentColor(colorInt(cat.color));
 
-    // ── Erreur ────────────────────────────────────────────────────────────────
     if (errorMsg) {
         container
             .addTextDisplayComponents(new TextDisplayBuilder().setContent(
@@ -312,7 +259,6 @@ function buildCategoryPanel(catKey, errorMsg = null, guildIconURL = null) {
             .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2));
     }
 
-    // ── En-tête ───────────────────────────────────────────────────────────────
     if (guildIconURL) {
         container.addSectionComponents(
             new SectionBuilder()
@@ -329,7 +275,6 @@ function buildCategoryPanel(catKey, errorMsg = null, guildIconURL = null) {
         );
     }
 
-    // ── Configuration ─────────────────────────────────────────────────────────
     container
         .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2))
         .addTextDisplayComponents(new TextDisplayBuilder().setContent(
@@ -346,7 +291,6 @@ function buildCategoryPanel(catKey, errorMsg = null, guildIconURL = null) {
             )
         );
 
-    // ── Aperçu embed ──────────────────────────────────────────────────────────
     container
         .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2))
         .addTextDisplayComponents(new TextDisplayBuilder().setContent(
@@ -361,7 +305,6 @@ function buildCategoryPanel(catKey, errorMsg = null, guildIconURL = null) {
             )
         );
 
-    // ── Boutons hors container ────────────────────────────────────────────────
     const actionRow = new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId('cfg_back').setLabel('Retour').setEmoji('↩️').setStyle(ButtonStyle.Secondary),
         new ButtonBuilder().setCustomId(`cfg_save:${catKey}`).setLabel('Sauvegarder').setEmoji('💾').setStyle(ButtonStyle.Success),
@@ -371,8 +314,6 @@ function buildCategoryPanel(catKey, errorMsg = null, guildIconURL = null) {
 
     return [container, actionRow];
 }
-
-// ─── Confirmation de suppression ──────────────────────────────────────────────
 
 function buildDeleteConfirmPanel(catKey) {
     const cat = config.ticketCategories[catKey];
@@ -401,112 +342,6 @@ function buildDeleteConfirmPanel(catKey) {
     return [container, actionRow];
 }
 
-// ─── Panel d'attente de saisie ────────────────────────────────────────────────
-
-function buildAwaitingPanel(type, catKey) {
-    const cat = config.ticketCategories[catKey] ?? { label: catKey };
-
-    const infos = {
-        setcat: {
-            emoji: '📁',
-            title: 'Catégorie Discord',
-            what:  'Envoie l\'**ID de la catégorie Discord**',
-            hint:  'Clic droit sur la catégorie → *Copier l\'identifiant*\n-# Active le mode développeur : Paramètres → Avancés → Mode développeur.',
-        },
-        transcript: {
-            emoji: '📋',
-            title: 'Salon des transcripts',
-            what:  'Envoie le **#salon** ou son **ID**',
-            hint:  'Exemple : `#transcripts` ou l\'ID numérique du salon.',
-        },
-        sendchan: {
-            emoji: '📤',
-            title: 'Envoyer le panel',
-            what:  'Envoie le **#salon** ou son **ID**',
-            hint:  'L\'embed et le bouton d\'ouverture seront envoyés dans ce salon.',
-        },
-        set_welcome: {
-            emoji: '🎉',
-            title: 'Salon de bienvenue',
-            what:  'Envoie le **#salon** ou son **ID**',
-            hint:  'Ce salon recevra les messages de bienvenue.',
-        },
-        set_leave: {
-            emoji: '👋',
-            title: 'Salon de départ',
-            what:  'Envoie le **#salon** ou son **ID**',
-            hint:  'Ce salon recevra les messages de départ.',
-        },
-    };
-    const info = infos[type] ?? { emoji: '⌨️', title: 'Saisie', what: 'Envoie ta réponse.', hint: '' };
-
-    const container = new ContainerBuilder()
-        .setAccentColor(ACCENT_WAIT)
-        .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-            `# ${info.emoji}  ${info.title}\n` +
-            `-# Embed : **${cat.label}**`
-        ))
-        .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2))
-        .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-            `${info.what} directement dans ce salon.\n` +
-            `\n` +
-            info.hint +
-            `\n` +
-            `-# Tape \`annuler\` ou clique sur le bouton ci-dessous pour annuler.`
-        ));
-
-    const actionRow = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-            .setCustomId('cfg_cancel')
-            .setLabel('Annuler')
-            .setEmoji('✖️')
-            .setStyle(ButtonStyle.Secondary)
-    );
-
-    return [container, actionRow];
-}
-
-function panelToMessageOptions(panelOrPanels) {
-    const panels = Array.isArray(panelOrPanels) ? panelOrPanels : [panelOrPanels];
-
-    const actionRows = [];
-    const descriptionParts = [];
-    let accentColor;
-
-    for (const panel of panels) {
-        const json = typeof panel?.toJSON === 'function' ? panel.toJSON() : panel;
-        if (!json?.components) continue;
-
-        if (accentColor === undefined && typeof json.accent_color === 'number') {
-            accentColor = json.accent_color;
-        }
-
-        for (const component of json.components) {
-            if (component?.type === 10 && typeof component.content === 'string') {
-                descriptionParts.push(component.content);
-            } else if (component?.type === 14) {
-                descriptionParts.push('');
-            } else if (component?.type === 1) {
-                actionRows.push(component);
-            }
-        }
-    }
-
-    const options = {};
-    if (descriptionParts.length > 0) {
-        const description = descriptionParts.join('\n\n');
-        const embed = new EmbedBuilder().setDescription(description);
-        if (accentColor !== undefined) embed.setColor(accentColor);
-        options.embeds = [embed];
-    }
-
-    if (actionRows.length > 0) {
-        options.components = actionRows;
-    }
-
-    return options;
-}
-
 module.exports = {
     buildConfigHomePanel,
     buildWelcomePanel,
@@ -515,6 +350,4 @@ module.exports = {
     buildMainPanel,
     buildCategoryPanel,
     buildDeleteConfirmPanel,
-    buildAwaitingPanel,
-    panelToMessageOptions,
 };

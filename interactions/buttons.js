@@ -1,4 +1,4 @@
-const {
+﻿const {
     MessageFlags, ChannelType, PermissionFlagsBits,
     ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder,
     EmbedBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle,
@@ -8,7 +8,6 @@ const path = require('path');
 
 const { config, saveConfig }      = require('../utils/config');
 const { intToHex, colorInt }      = require('../utils/helpers');
-const { pendingInputs }           = require('../utils/pending');
 const { getTickets, saveTickets } = require('../utils/tickets');
 const { generateTranscript }      = require('../utils/transcript');
 const {
@@ -17,13 +16,10 @@ const {
     buildMainPanel,
     buildCategoryPanel,
     buildDeleteConfirmPanel,
-    buildAwaitingPanel,
     buildTicketEmbed,
     buildTicketOpenRow,
 } = require('../utils/builders');
 const { createWelcomeImage } = require('../utils/welcomeImage');
-
-// ─── Helper : récupère l'icône du serveur ─────────────────────────────────────
 
 function getGuildIcon(guild) {
     return guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
@@ -56,80 +52,68 @@ async function generateWelcomePreview(interaction, type = 'welcome') {
     return { embed, files };
 }
 
-// ─── Boutons de contrôle dans le salon ticket ─────────────────────────────────
-
-function buildTicketControlRow(claimed = false, claimerTag = null) {
-    return new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-            .setCustomId('ticket_close')
-            .setLabel('Fermer').setEmoji('🔒')
-            .setStyle(ButtonStyle.Danger),
-        new ButtonBuilder()
-            .setCustomId('ticket_claim')
-            .setLabel(claimed ? `Claim : ${claimerTag}` : 'Claim')
-            .setEmoji(claimed ? '✅' : '🙋')
-            .setStyle(claimed ? ButtonStyle.Success : ButtonStyle.Secondary)
-            .setDisabled(claimed),
+function buildChannelModal(customId, title, placeholder) {
+    const modal = new ModalBuilder().setCustomId(customId).setTitle(title);
+    modal.addComponents(
+        new ActionRowBuilder().addComponents(
+            new TextInputBuilder()
+                .setCustomId('channel_id')
+                .setLabel('ID du salon')
+                .setStyle(TextInputStyle.Short)
+                .setPlaceholder(placeholder)
+                .setRequired(true)
+        )
     );
+    return modal;
+}
+
+function buildChannelModalFromButton(customId, title) {
+    return buildChannelModal(customId, title, 'Ex: 123456789012345678');
+}
+
+function isTextChannel(channel) {
+    return channel && [ChannelType.GuildText, ChannelType.GuildAnnouncement, ChannelType.GuildStageVoice, ChannelType.GuildForum].includes(channel.type);
+}
+
+function isCategoryChannel(channel) {
+    return channel && channel.type === ChannelType.GuildCategory;
+}
+
+function safeReply(interaction, payload) {
+    return interaction.replied || interaction.deferred
+        ? interaction.followUp(payload)
+        : interaction.reply(payload);
 }
 
 async function handleButton(interaction) {
     const id   = interaction.customId;
     const icon = getGuildIcon(interaction.guild);
 
-    // ════════════════════════════════════════════════════════════════════════
-    // NAVIGATION
-    // ════════════════════════════════════════════════════════════════════════
-
+    // ── Navigation
     if (id === 'cfg_back_home') {
-        return interaction.update({
-            components: [buildConfigHomePanel(icon)],
-            
-        });
+        return interaction.update({ components: [buildConfigHomePanel(icon)] });
     }
 
     if (id === 'cfg_back') {
-        return interaction.update({
-            components: [buildMainPanel(icon)],
-            
-        });
+        return interaction.update({ components: [buildMainPanel(icon)] });
     }
 
+    // ── Configuration des arrivées/départs
     if (id === 'cfg_welcome_set_welcome') {
-        pendingInputs[interaction.user.id] = {
-            type:   'set_welcome',
-            catKey: 'welcome',
-            token:  interaction.token,
-            appId:  interaction.client.application.id,
-            guildId: interaction.guildId,
-        };
-        const [container, actionRow] = buildAwaitingPanel('set_welcome', 'welcome');
-        return interaction.update({ components: [container, actionRow]});
+        const modal = buildChannelModalFromButton('cfg_modal_set_welcome', 'Salon de bienvenue');
+        return interaction.showModal(modal);
     }
 
     if (id === 'cfg_welcome_set_leave') {
-        pendingInputs[interaction.user.id] = {
-            type:   'set_leave',
-            catKey: 'welcome',
-            token:  interaction.token,
-            appId:  interaction.client.application.id,
-            guildId: interaction.guildId,
-        };
-        const [container, actionRow] = buildAwaitingPanel('set_leave', 'welcome');
-        return interaction.update({ components: [container, actionRow]});
+        const modal = buildChannelModalFromButton('cfg_modal_set_leave', 'Salon de départ');
+        return interaction.showModal(modal);
     }
 
     if (id.startsWith('cfg_welcome_preview:')) {
         const type = id.split(':')[1] === 'leave' ? 'leave' : 'welcome';
         const [container, actionRow] = buildWelcomePanel(icon);
-
         const { embed, files } = await generateWelcomePreview(interaction, type);
-        return interaction.update({
-            components: [container, actionRow],
-            embeds:     [embed],
-            files,
-            
-        });
+        return interaction.update({ components: [container, actionRow], embeds: [embed], files });
     }
 
     if (id.startsWith('cfg_welcome_edit:')) {
@@ -152,33 +136,23 @@ async function handleButton(interaction) {
         return interaction.showModal(modal);
     }
 
-
+    // ── Navigation vers la configuration tickets
     if (id.startsWith('cfg_open:')) {
         const catKey = id.split(':')[1];
         if (!config.ticketCategories[catKey])
-            return interaction.update({ components: [buildMainPanel(icon)]});
+            return interaction.update({ components: [buildMainPanel(icon)] });
 
         const [container, actionRow] = buildCategoryPanel(catKey, null, icon);
-        return interaction.update({
-            components: [container, actionRow],
-            
-        });
+        return interaction.update({ components: [container, actionRow] });
     }
 
-    // Retour depuis la page de confirmation vers la page embed
     if (id.startsWith('cfg_back_cat:')) {
         const catKey = id.split(':')[1];
         const [container, actionRow] = buildCategoryPanel(catKey, null, icon);
-        return interaction.update({
-            components: [container, actionRow],
-            
-        });
+        return interaction.update({ components: [container, actionRow] });
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    // MENU PRINCIPAL
-    // ════════════════════════════════════════════════════════════════════════
-
+    // ── Création et édition des embeds
     if (id === 'cfg_create') {
         const modal = new ModalBuilder()
             .setCustomId('cfg_modal_create')
@@ -193,14 +167,10 @@ async function handleButton(interaction) {
         return interaction.showModal(modal);
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    // PAGE CATÉGORIE — Actions dans le container
-    // ════════════════════════════════════════════════════════════════════════
-
     if (id.startsWith('cfg_edit:')) {
         const catKey = id.split(':')[1];
         const cat    = config.ticketCategories[catKey];
-        if (!cat) return interaction.update({ components: [buildMainPanel(icon)]});
+        if (!cat) return interaction.update({ components: [buildMainPanel(icon)] });
 
         const modal = new ModalBuilder().setCustomId(`cfg_modal_edit:${catKey}`).setTitle(`Modifier — ${cat.label}`);
         modal.addComponents(
@@ -214,7 +184,7 @@ async function handleButton(interaction) {
     if (id.startsWith('cfg_color:')) {
         const catKey = id.split(':')[1];
         const cat    = config.ticketCategories[catKey];
-        if (!cat) return interaction.update({ components: [buildMainPanel(icon)]});
+        if (!cat) return interaction.update({ components: [buildMainPanel(icon)] });
 
         const modal = new ModalBuilder().setCustomId(`cfg_modal_color:${catKey}`).setTitle(`Couleur — ${cat.label}`);
         modal.addComponents(
@@ -231,49 +201,36 @@ async function handleButton(interaction) {
         return interaction.showModal(modal);
     }
 
+    // ── Canaux et envoi d'embed
     if (id.startsWith('cfg_setcat:')) {
         const catKey = id.split(':')[1];
-        pendingInputs[interaction.user.id] = { type: 'setcat', catKey, token: interaction.token, appId: interaction.client.application.id, guildId: interaction.guildId };
-        const [container, actionRow] = buildAwaitingPanel('setcat', catKey);
-        return interaction.update({ components: [container, actionRow]});
+        const modal = buildChannelModalFromButton(`cfg_modal_setcat:${catKey}`, 'Catégorie Discord');
+        return interaction.showModal(modal);
     }
 
     if (id.startsWith('cfg_transcript:')) {
         const catKey = id.split(':')[1];
-        pendingInputs[interaction.user.id] = { type: 'transcript', catKey, token: interaction.token, appId: interaction.client.application.id, guildId: interaction.guildId };
-        const [container, actionRow] = buildAwaitingPanel('transcript', catKey);
-        return interaction.update({ components: [container, actionRow]});
+        const modal = buildChannelModalFromButton(`cfg_modal_transcript:${catKey}`, 'Salon des transcripts');
+        return interaction.showModal(modal);
     }
 
     if (id.startsWith('cfg_send:')) {
         const catKey = id.split(':')[1];
-        pendingInputs[interaction.user.id] = { type: 'sendchan', catKey, token: interaction.token, appId: interaction.client.application.id, guildId: interaction.guildId };
-        const [container, actionRow] = buildAwaitingPanel('sendchan', catKey);
-        return interaction.update({ components: [container, actionRow]});
+        const modal = buildChannelModalFromButton(`cfg_modal_send:${catKey}`, 'Salon d\'envoi');
+        return interaction.showModal(modal);
     }
 
     if (id === 'cfg_cancel') {
-        const pending = pendingInputs[interaction.user.id];
-        const catKey  = pending?.catKey;
-        delete pendingInputs[interaction.user.id];
-        if (catKey && config.ticketCategories[catKey]) {
-            const [container, actionRow] = buildCategoryPanel(catKey, null, icon);
-            return interaction.update({ components: [container, actionRow]});
-        }
-        return interaction.update({ components: [buildMainPanel(icon)]});
+        return interaction.update({ components: [buildMainPanel(icon)] });
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    // PAGE CATÉGORIE — Actions hors container
-    // ════════════════════════════════════════════════════════════════════════
-
+    // ── Sauvegarde / aperçu / suppression
     if (id.startsWith('cfg_save:')) {
         const catKey = id.split(':')[1];
         if (!config.ticketCategories[catKey])
-            return interaction.update({ components: [buildMainPanel(icon)]});
+            return interaction.update({ components: [buildMainPanel(icon)] });
 
         saveConfig();
-
         const [container, actionRow] = buildCategoryPanel(catKey, null, icon);
         const confirmedRow = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId('cfg_back').setLabel('Retour').setEmoji('↩️').setStyle(ButtonStyle.Secondary),
@@ -281,7 +238,7 @@ async function handleButton(interaction) {
             new ButtonBuilder().setCustomId(`cfg_preview:${catKey}`).setLabel('Aperçu complet').setEmoji('👁️').setStyle(ButtonStyle.Secondary),
             new ButtonBuilder().setCustomId(`cfg_delete_confirm:${catKey}`).setLabel('Supprimer').setEmoji('🗑️').setStyle(ButtonStyle.Danger),
         );
-        return interaction.update({ components: [container, confirmedRow]});
+        return interaction.update({ components: [container, confirmedRow] });
     }
 
     if (id.startsWith('cfg_preview:')) {
@@ -296,28 +253,23 @@ async function handleButton(interaction) {
         });
     }
 
-    // Demande de confirmation avant suppression
     if (id.startsWith('cfg_delete_confirm:')) {
         const catKey = id.split(':')[1];
         if (!config.ticketCategories[catKey])
-            return interaction.update({ components: [buildMainPanel(icon)]});
+            return interaction.update({ components: [buildMainPanel(icon)] });
 
         const [container, actionRow] = buildDeleteConfirmPanel(catKey);
-        return interaction.update({ components: [container, actionRow]});
+        return interaction.update({ components: [container, actionRow] });
     }
 
-    // Confirmation → suppression effective
     if (id.startsWith('cfg_delete_yes:')) {
         const catKey = id.split(':')[1];
         delete config.ticketCategories[catKey];
         saveConfig();
-        return interaction.update({ components: [buildMainPanel(icon)]});
+        return interaction.update({ components: [buildMainPanel(icon)] });
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    // TICKETS
-    // ════════════════════════════════════════════════════════════════════════
-
+    // ── Système de tickets
     if (id.startsWith('ticket_create:')) {
         const catKey = id.split(':')[1];
         const cat    = config.ticketCategories[catKey];
@@ -410,7 +362,7 @@ async function handleButton(interaction) {
                                 { name: 'Embed',   value: cat?.label ?? ticketInfo.catKey, inline: true },
                                 { name: 'Utilisateur', value: `<@${ticketInfo.userId}> (${ticketInfo.username})`, inline: true },
                                 { name: 'Fermé par',   value: interaction.user.tag, inline: true },
-                                { name: 'Ouvert le',   value: `<t:${Math.floor(ticketInfo.openedAt / 1000)}:F>`, inline: false },
+                                { name: 'Ouvert le',  value: `<t:${Math.floor(ticketInfo.openedAt / 1000)}:F>`, inline: false },
                                 { name: 'Claim',       value: ticketInfo.claimedBy ?? 'Non claim', inline: true },
                             )
                             .setColor(colorInt(cat?.color ?? 0x5865f2))
@@ -429,7 +381,7 @@ async function handleButton(interaction) {
 
         } catch (err) {
             console.error('Erreur fermeture ticket :', err);
-            await interaction.followUp({ content: `❌ Erreur : \`${err.message}\``, flags: MessageFlags.Ephemeral });
+            await interaction.followUp({ content: '❌ Erreur : `' + err.message + '`', flags: MessageFlags.Ephemeral });
         }
     }
 }
