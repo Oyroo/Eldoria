@@ -1,5 +1,5 @@
 const { EmbedBuilder, AttachmentBuilder } = require('discord.js');
-const { buildConfigHomePanel, buildWelcomePanel, buildMainPanel, panelToMessageOptions } = require('../utils/builders');
+const { buildConfigHomePanel, buildWelcomePanel, buildMainPanel } = require('../utils/builders');
 const { createWelcomeImage } = require('../utils/welcomeImage');
 const { config } = require('../utils/config');
 
@@ -38,33 +38,27 @@ async function handleSelect(interaction) {
 
     switch (value) {
         case 'home':
-            return interaction.update(panelToMessageOptions(buildConfigHomePanel(icon)));
+            return interaction.update({ components: [buildConfigHomePanel(icon)] });
         case 'welcome-goodbye':
             {
                 const [container, actionRow] = buildWelcomePanel(icon);
                 const { embed, files } = await generateWelcomePreview(interaction, 'welcome');
-
-                await interaction.update(panelToMessageOptions([container, actionRow]));
-
-                return interaction.followUp({
-                    embeds: [embed],
+                return interaction.update({
+                    components: [container, actionRow],
+                    embeds:     [embed],
                     files,
-                    ephemeral: true,
                 });
             }
         case 'tickets':
-            return interaction.update(panelToMessageOptions(buildMainPanel(icon)));
+            return interaction.update({ components: [buildMainPanel(icon)] });
         default: {
             const warning = new EmbedBuilder()
                 .setColor(0xED4245)
                 .setTitle('⚠️ Section non disponible')
                 .setDescription('Cette section n’est pas encore disponible dans ce panel.');
-
-            await interaction.update(panelToMessageOptions(buildConfigHomePanel(icon)));
-
-            return interaction.followUp({
-                embeds:    [warning],
-                ephemeral: true,
+            return interaction.update({
+                embeds: [warning],
+                components: [buildConfigHomePanel(icon)],
             });
         }
     }

@@ -1,9 +1,8 @@
 const {
-    SlashCommandBuilder, ChannelType,
+    SlashCommandBuilder, MessageFlags, ChannelType,
     ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, SectionBuilder, ThumbnailBuilder,
     SeparatorSpacingSize,
 } = require('discord.js');
-const { panelToMessageOptions } = require('../utils/builders');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -57,6 +56,8 @@ module.exports = {
                 `🚀  **Nombre de boosts** : **${guild.premiumSubscriptionCount ?? 0}**`,
             ].join('\n')));
 
-        await interaction.editReply(panelToMessageOptions(container));
+        await interaction.editReply({
+            components: [container],
+        });
     },
 };

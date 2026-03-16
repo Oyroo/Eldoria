@@ -1,5 +1,5 @@
 const {
-    ChannelType, PermissionFlagsBits,
+    MessageFlags, ChannelType, PermissionFlagsBits,
     ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder,
     EmbedBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle,
 } = require('discord.js');
@@ -20,7 +20,6 @@ const {
     buildAwaitingPanel,
     buildTicketEmbed,
     buildTicketOpenRow,
-    panelToMessageOptions,
 } = require('../utils/builders');
 const { createWelcomeImage } = require('../utils/welcomeImage');
 
@@ -83,11 +82,17 @@ async function handleButton(interaction) {
     // ════════════════════════════════════════════════════════════════════════
 
     if (id === 'cfg_back_home') {
-        return interaction.update(panelToMessageOptions(buildConfigHomePanel(icon)));
+        return interaction.update({
+            components: [buildConfigHomePanel(icon)],
+            
+        });
     }
 
     if (id === 'cfg_back') {
-        return interaction.update(panelToMessageOptions(buildMainPanel(icon)));
+        return interaction.update({
+            components: [buildMainPanel(icon)],
+            
+        });
     }
 
     if (id === 'cfg_welcome_set_welcome') {
@@ -99,7 +104,7 @@ async function handleButton(interaction) {
             guildId: interaction.guildId,
         };
         const [container, actionRow] = buildAwaitingPanel('set_welcome', 'welcome');
-        return interaction.update(panelToMessageOptions([container, actionRow]));
+        return interaction.update({ components: [container, actionRow]});
     }
 
     if (id === 'cfg_welcome_set_leave') {
@@ -111,7 +116,7 @@ async function handleButton(interaction) {
             guildId: interaction.guildId,
         };
         const [container, actionRow] = buildAwaitingPanel('set_leave', 'welcome');
-        return interaction.update(panelToMessageOptions([container, actionRow]));
+        return interaction.update({ components: [container, actionRow]});
     }
 
     if (id.startsWith('cfg_welcome_preview:')) {
@@ -119,13 +124,11 @@ async function handleButton(interaction) {
         const [container, actionRow] = buildWelcomePanel(icon);
 
         const { embed, files } = await generateWelcomePreview(interaction, type);
-
-        await interaction.update(panelToMessageOptions([container, actionRow]));
-
-        return interaction.followUp({
-            embeds:    [embed],
+        return interaction.update({
+            components: [container, actionRow],
+            embeds:     [embed],
             files,
-            ephemeral: true,
+            
         });
     }
 
@@ -153,17 +156,23 @@ async function handleButton(interaction) {
     if (id.startsWith('cfg_open:')) {
         const catKey = id.split(':')[1];
         if (!config.ticketCategories[catKey])
-            return interaction.update(panelToMessageOptions(buildMainPanel(icon)));
+            return interaction.update({ components: [buildMainPanel(icon)]});
 
         const [container, actionRow] = buildCategoryPanel(catKey, null, icon);
-        return interaction.update(panelToMessageOptions([container, actionRow]));
+        return interaction.update({
+            components: [container, actionRow],
+            
+        });
     }
 
     // Retour depuis la page de confirmation vers la page embed
     if (id.startsWith('cfg_back_cat:')) {
         const catKey = id.split(':')[1];
         const [container, actionRow] = buildCategoryPanel(catKey, null, icon);
-        return interaction.update(panelToMessageOptions([container, actionRow]));
+        return interaction.update({
+            components: [container, actionRow],
+            
+        });
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -191,7 +200,7 @@ async function handleButton(interaction) {
     if (id.startsWith('cfg_edit:')) {
         const catKey = id.split(':')[1];
         const cat    = config.ticketCategories[catKey];
-        if (!cat) return interaction.update(panelToMessageOptions(buildMainPanel(icon)));
+        if (!cat) return interaction.update({ components: [buildMainPanel(icon)]});
 
         const modal = new ModalBuilder().setCustomId(`cfg_modal_edit:${catKey}`).setTitle(`Modifier — ${cat.label}`);
         modal.addComponents(
@@ -205,7 +214,7 @@ async function handleButton(interaction) {
     if (id.startsWith('cfg_color:')) {
         const catKey = id.split(':')[1];
         const cat    = config.ticketCategories[catKey];
-        if (!cat) return interaction.update(panelToMessageOptions(buildMainPanel(icon)));
+        if (!cat) return interaction.update({ components: [buildMainPanel(icon)]});
 
         const modal = new ModalBuilder().setCustomId(`cfg_modal_color:${catKey}`).setTitle(`Couleur — ${cat.label}`);
         modal.addComponents(
@@ -226,21 +235,21 @@ async function handleButton(interaction) {
         const catKey = id.split(':')[1];
         pendingInputs[interaction.user.id] = { type: 'setcat', catKey, token: interaction.token, appId: interaction.client.application.id, guildId: interaction.guildId };
         const [container, actionRow] = buildAwaitingPanel('setcat', catKey);
-        return interaction.update(panelToMessageOptions([container, actionRow]));
+        return interaction.update({ components: [container, actionRow]});
     }
 
     if (id.startsWith('cfg_transcript:')) {
         const catKey = id.split(':')[1];
         pendingInputs[interaction.user.id] = { type: 'transcript', catKey, token: interaction.token, appId: interaction.client.application.id, guildId: interaction.guildId };
         const [container, actionRow] = buildAwaitingPanel('transcript', catKey);
-        return interaction.update(panelToMessageOptions([container, actionRow]));
+        return interaction.update({ components: [container, actionRow]});
     }
 
     if (id.startsWith('cfg_send:')) {
         const catKey = id.split(':')[1];
         pendingInputs[interaction.user.id] = { type: 'sendchan', catKey, token: interaction.token, appId: interaction.client.application.id, guildId: interaction.guildId };
         const [container, actionRow] = buildAwaitingPanel('sendchan', catKey);
-        return interaction.update(panelToMessageOptions([container, actionRow]));
+        return interaction.update({ components: [container, actionRow]});
     }
 
     if (id === 'cfg_cancel') {
@@ -249,9 +258,9 @@ async function handleButton(interaction) {
         delete pendingInputs[interaction.user.id];
         if (catKey && config.ticketCategories[catKey]) {
             const [container, actionRow] = buildCategoryPanel(catKey, null, icon);
-            return interaction.update(panelToMessageOptions([container, actionRow]));
+            return interaction.update({ components: [container, actionRow]});
         }
-        return interaction.update(panelToMessageOptions(buildMainPanel(icon)));
+        return interaction.update({ components: [buildMainPanel(icon)]});
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -261,7 +270,7 @@ async function handleButton(interaction) {
     if (id.startsWith('cfg_save:')) {
         const catKey = id.split(':')[1];
         if (!config.ticketCategories[catKey])
-            return interaction.update(panelToMessageOptions(buildMainPanel(icon)));
+            return interaction.update({ components: [buildMainPanel(icon)]});
 
         saveConfig();
 
@@ -272,18 +281,18 @@ async function handleButton(interaction) {
             new ButtonBuilder().setCustomId(`cfg_preview:${catKey}`).setLabel('Aperçu complet').setEmoji('👁️').setStyle(ButtonStyle.Secondary),
             new ButtonBuilder().setCustomId(`cfg_delete_confirm:${catKey}`).setLabel('Supprimer').setEmoji('🗑️').setStyle(ButtonStyle.Danger),
         );
-        return interaction.update(panelToMessageOptions([container, confirmedRow]));
+        return interaction.update({ components: [container, confirmedRow]});
     }
 
     if (id.startsWith('cfg_preview:')) {
         const catKey = id.split(':')[1];
         const cat    = config.ticketCategories[catKey];
-        if (!cat) return interaction.reply({ content: '❌ Embed introuvable.', ephemeral: true });
+        if (!cat) return interaction.reply({ content: '❌ Embed introuvable.', flags: MessageFlags.Ephemeral });
         return interaction.reply({
-            ephemeral:   true,
             content:    `-# Aperçu — **${cat.label}**`,
             embeds:     [buildTicketEmbed(catKey)],
             components: [buildTicketOpenRow(catKey)],
+            flags:      MessageFlags.Ephemeral,
         });
     }
 
@@ -291,10 +300,10 @@ async function handleButton(interaction) {
     if (id.startsWith('cfg_delete_confirm:')) {
         const catKey = id.split(':')[1];
         if (!config.ticketCategories[catKey])
-            return interaction.update(panelToMessageOptions(buildMainPanel(icon)));
+            return interaction.update({ components: [buildMainPanel(icon)]});
 
         const [container, actionRow] = buildDeleteConfirmPanel(catKey);
-        return interaction.update(panelToMessageOptions([container, actionRow]));
+        return interaction.update({ components: [container, actionRow]});
     }
 
     // Confirmation → suppression effective
@@ -302,7 +311,7 @@ async function handleButton(interaction) {
         const catKey = id.split(':')[1];
         delete config.ticketCategories[catKey];
         saveConfig();
-        return interaction.update(panelToMessageOptions(buildMainPanel(icon)));
+        return interaction.update({ components: [buildMainPanel(icon)]});
     }
 
     // ════════════════════════════════════════════════════════════════════════

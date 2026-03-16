@@ -1,5 +1,5 @@
-const { SlashCommandBuilder } = require('discord.js');
-const { buildConfigHomePanel, panelToMessageOptions } = require('../utils/builders');
+const { SlashCommandBuilder, MessageFlags } = require('discord.js');
+const { buildConfigHomePanel } = require('../utils/builders');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -11,8 +11,8 @@ module.exports = {
     async execute(interaction) {
         const iconURL = interaction.guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
         await interaction.reply({
-            ephemeral: true,
-            ...panelToMessageOptions(buildConfigHomePanel(iconURL)),
+            components: [buildConfigHomePanel(iconURL)],
+            flags: MessageFlags.Ephemeral,
         });
     },
 };
