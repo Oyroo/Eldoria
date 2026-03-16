@@ -1,7 +1,7 @@
-const { MessageFlags, EmbedBuilder, AttachmentBuilder } = require('discord.js');
+const { EmbedBuilder, AttachmentBuilder } = require('discord.js');
 const { config, saveConfig }                 = require('../utils/config');
 const { hexToInt, uniqueKey }                = require('../utils/helpers');
-const { buildMainPanel, buildCategoryPanel, buildWelcomePanel } = require('../utils/builders');
+const { buildMainPanel, buildCategoryPanel, buildWelcomePanel, panelToMessageOptions } = require('../utils/builders');
 const { createWelcomeImage } = require('../utils/welcomeImage');
 
 function formatWelcomeTemplate(template, member, guild) {
@@ -60,14 +60,14 @@ async function handleModal(interaction) {
         saveConfig();
 
         const [container, actionRow] = buildCategoryPanel(catKey, null, icon);
-        return interaction.update({ components: [container, actionRow], flags: MessageFlags.IsComponentsV2 });
+        return interaction.update(panelToMessageOptions([container, actionRow]));
     }
 
     // ── Modifier l'embed ──────────────────────────────────────
     if (id.startsWith('cfg_modal_edit:')) {
         const catKey = id.split(':')[1];
         const cat    = config.ticketCategories[catKey];
-        if (!cat) return interaction.update({ components: [buildMainPanel(icon)], flags: MessageFlags.IsComponentsV2 });
+        if (!cat) return interaction.update(panelToMessageOptions(buildMainPanel(icon)));
 
         const btnLabel = interaction.fields.getTextInputValue('button_label').trim();
         cat.title       = interaction.fields.getTextInputValue('title');
@@ -76,21 +76,21 @@ async function handleModal(interaction) {
         saveConfig();
 
         const [container, actionRow] = buildCategoryPanel(catKey, null, icon);
-        return interaction.update({ components: [container, actionRow], flags: MessageFlags.IsComponentsV2 });
+        return interaction.update(panelToMessageOptions([container, actionRow]));
     }
 
     // ── Modifier la couleur ───────────────────────────────────────────────────
     if (id.startsWith('cfg_modal_color:')) {
         const catKey  = id.split(':')[1];
         const cat     = config.ticketCategories[catKey];
-        if (!cat) return interaction.update({ components: [buildMainPanel(icon)], flags: MessageFlags.IsComponentsV2 });
+        if (!cat) return interaction.update(panelToMessageOptions(buildMainPanel(icon)));
 
         const colorRaw = interaction.fields.getTextInputValue('color').trim();
         cat.color = hexToInt(colorRaw);
         saveConfig();
 
         const [container, actionRow] = buildCategoryPanel(catKey, null, icon);
-        return interaction.update({ components: [container, actionRow], flags: MessageFlags.IsComponentsV2 });
+        return interaction.update(panelToMessageOptions([container, actionRow]));
     }
 
     // ── Modifier le texte bienvenue/départ ─────────────────────────────────────
@@ -107,10 +107,7 @@ async function handleModal(interaction) {
         const [container, actionRow] = buildWelcomePanel(icon);
         const { embed, files } = await generateWelcomePreview(interaction, type === 'leave' ? 'leave' : 'welcome');
 
-        await interaction.update({
-            components: [container, actionRow],
-            flags:      MessageFlags.IsComponentsV2,
-        });
+        await interaction.update(panelToMessageOptions([container, actionRow]));
 
         return interaction.followUp({
             embeds:    [embed],

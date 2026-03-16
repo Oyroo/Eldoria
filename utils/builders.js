@@ -466,6 +466,47 @@ function buildAwaitingPanel(type, catKey) {
     return [container, actionRow];
 }
 
+function panelToMessageOptions(panelOrPanels) {
+    const panels = Array.isArray(panelOrPanels) ? panelOrPanels : [panelOrPanels];
+
+    const actionRows = [];
+    const descriptionParts = [];
+    let accentColor;
+
+    for (const panel of panels) {
+        const json = typeof panel?.toJSON === 'function' ? panel.toJSON() : panel;
+        if (!json?.components) continue;
+
+        if (accentColor === undefined && typeof json.accent_color === 'number') {
+            accentColor = json.accent_color;
+        }
+
+        for (const component of json.components) {
+            if (component?.type === 10 && typeof component.content === 'string') {
+                descriptionParts.push(component.content);
+            } else if (component?.type === 14) {
+                descriptionParts.push('');
+            } else if (component?.type === 1) {
+                actionRows.push(component);
+            }
+        }
+    }
+
+    const options = {};
+    if (descriptionParts.length > 0) {
+        const description = descriptionParts.join('\n\n');
+        const embed = new EmbedBuilder().setDescription(description);
+        if (accentColor !== undefined) embed.setColor(accentColor);
+        options.embeds = [embed];
+    }
+
+    if (actionRows.length > 0) {
+        options.components = actionRows;
+    }
+
+    return options;
+}
+
 module.exports = {
     buildConfigHomePanel,
     buildWelcomePanel,
@@ -475,4 +516,5 @@ module.exports = {
     buildCategoryPanel,
     buildDeleteConfirmPanel,
     buildAwaitingPanel,
+    panelToMessageOptions,
 };

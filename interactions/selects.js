@@ -1,5 +1,5 @@
-const { MessageFlags, EmbedBuilder, AttachmentBuilder } = require('discord.js');
-const { buildConfigHomePanel, buildWelcomePanel, buildMainPanel } = require('../utils/builders');
+const { EmbedBuilder, AttachmentBuilder } = require('discord.js');
+const { buildConfigHomePanel, buildWelcomePanel, buildMainPanel, panelToMessageOptions } = require('../utils/builders');
 const { createWelcomeImage } = require('../utils/welcomeImage');
 const { config } = require('../utils/config');
 
@@ -38,16 +38,13 @@ async function handleSelect(interaction) {
 
     switch (value) {
         case 'home':
-            return interaction.update({ components: [buildConfigHomePanel(icon)], flags: MessageFlags.IsComponentsV2 });
+            return interaction.update(panelToMessageOptions(buildConfigHomePanel(icon)));
         case 'welcome-goodbye':
             {
                 const [container, actionRow] = buildWelcomePanel(icon);
                 const { embed, files } = await generateWelcomePreview(interaction, 'welcome');
 
-                await interaction.update({
-                    components: [container, actionRow],
-                    flags:      MessageFlags.IsComponentsV2,
-                });
+                await interaction.update(panelToMessageOptions([container, actionRow]));
 
                 return interaction.followUp({
                     embeds: [embed],
@@ -56,17 +53,14 @@ async function handleSelect(interaction) {
                 });
             }
         case 'tickets':
-            return interaction.update({ components: [buildMainPanel(icon)], flags: MessageFlags.IsComponentsV2 });
+            return interaction.update(panelToMessageOptions(buildMainPanel(icon)));
         default: {
             const warning = new EmbedBuilder()
                 .setColor(0xED4245)
                 .setTitle('⚠️ Section non disponible')
                 .setDescription('Cette section n’est pas encore disponible dans ce panel.');
 
-            await interaction.update({
-                components: [buildConfigHomePanel(icon)],
-                flags:      MessageFlags.IsComponentsV2,
-            });
+            await interaction.update(panelToMessageOptions(buildConfigHomePanel(icon)));
 
             return interaction.followUp({
                 embeds:    [warning],
