@@ -1,11 +1,8 @@
 const { buildConfigMessage } = require('../utils/configPanels');
 
 async function handleSelect(interaction) {
-    const id = interaction.customId;
-
-    if (id === 'config_select') {
-        const module = interaction.values[0];
-        return interaction.update(buildConfigMessage(module, interaction.guild));
+    if (interaction.customId === 'config_select') {
+        return interaction.update(buildConfigMessage(interaction.values[0], interaction.guild));
     }
 }
 

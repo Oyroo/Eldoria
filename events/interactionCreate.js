@@ -1,12 +1,11 @@
-const { Events }  = require('discord.js');
-const Flags       = require('../utils/flags');
+const { Events } = require('discord.js');
+const Flags      = require('../utils/flags');
 
 module.exports = {
     name: Events.InteractionCreate,
 
     async execute(interaction) {
         try {
-
             if (interaction.isAutocomplete()) {
                 const cmd = interaction.client.commands.get(interaction.commandName);
                 if (cmd?.autocomplete) await cmd.autocomplete(interaction);
@@ -26,6 +25,13 @@ module.exports = {
             }
 
             if (interaction.isButton()) {
+                // Retour accueil config
+                if (interaction.customId === 'config_home') {
+                    const { buildConfigMessage } = require('../utils/configPanels');
+                    return interaction.update(buildConfigMessage('home', interaction.guild));
+                }
+
+                // Ouvre le panel ticket-config depuis /config
                 if (interaction.customId === 'config_tickets_open') {
                     const { mainPanel } = require('../utils/builders');
                     const icon = interaction.guild?.iconURL({ size: 256, extension: 'png' }) ?? null;

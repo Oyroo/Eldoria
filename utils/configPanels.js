@@ -7,111 +7,116 @@ const {
 
 const Flags = require('./flags');
 
-// ─── Modules disponibles ──────────────────────────────────────────────────────
+const GOLD = 0xd4a853;
+const GREY = 0x2b2d31;
 
 const MODULES = [
-    { value: 'home',        label: 'Accueil',            emoji: '🏡', available: true  },
-    { value: 'tickets',     label: 'Tickets',            emoji: '🎫', available: true  },
-    { value: 'moderation',  label: 'Modération',         emoji: '🔨', available: false },
-    { value: 'logs',        label: 'Logs',               emoji: '🗃️', available: false },
-    { value: 'welcome',     label: 'Arrivées & départs', emoji: '👋', available: false },
-    { value: 'autorole',    label: 'Rôles automatiques', emoji: '🏷️', available: false },
-    { value: 'levels',      label: 'Niveaux',            emoji: '📈', available: false },
-    { value: 'rolereact',   label: 'Rôles-Réactions',   emoji: '🔘', available: false },
-    { value: 'report',      label: 'Signalements',       emoji: '🚨', available: false },
+    { value: 'tickets',    label: 'Tickets',            emoji: '🎫', available: true  },
+    { value: 'moderation', label: 'Modération',         emoji: '🔨', available: false },
+    { value: 'logs',       label: 'Logs',               emoji: '🗃️', available: false },
+    { value: 'welcome',    label: 'Arrivées & départs', emoji: '👋', available: false },
+    { value: 'autorole',   label: 'Rôles automatiques', emoji: '🏷️', available: false },
+    { value: 'levels',     label: 'Niveaux',            emoji: '📈', available: false },
+    { value: 'rolereact',  label: 'Rôles-Réactions',   emoji: '🔘', available: false },
+    { value: 'report',     label: 'Signalements',       emoji: '🚨', available: false },
 ];
-
-// ─── Select menu de navigation ────────────────────────────────────────────────
-
-function configSelectMenu(current = 'home') {
-    const select = new StringSelectMenuBuilder()
-        .setCustomId('config_select')
-        .setPlaceholder('Choisissez un module…')
-        .addOptions(
-            MODULES.map(m =>
-                new StringSelectMenuOptionBuilder()
-                    .setLabel(m.label)
-                    .setValue(m.value)
-                    .setEmoji(m.emoji)
-                    .setDefault(m.value === current)
-                    .setDescription(m.available ? 'Configurer ce module' : 'Bientôt disponible')
-            )
-        );
-
-    return new ActionRowBuilder().addComponents(select);
-}
-
-// ─── Panels par module ────────────────────────────────────────────────────────
 
 function sep() {
     return new SeparatorBuilder().setDivider(true).setSpacing(2);
 }
 
+function selectMenu(current = null) {
+    return new ActionRowBuilder().addComponents(
+        new StringSelectMenuBuilder()
+            .setCustomId('config_select')
+            .setPlaceholder('Choisir un module…')
+            .addOptions(
+                MODULES.map(m =>
+                    new StringSelectMenuOptionBuilder()
+                        .setLabel(m.label)
+                        .setValue(m.value)
+                        .setEmoji(m.emoji)
+                        .setDefault(m.value === current)
+                        .setDescription(m.available ? 'Disponible' : 'Bientôt disponible')
+                )
+            )
+    );
+}
+
+function homeButton() {
+    return new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId('config_home')
+            .setLabel('Accueil')
+            .setEmoji('🏡')
+            .setStyle(ButtonStyle.Secondary)
+    );
+}
+
+// ─── Accueil ──────────────────────────────────────────────────────────────────
+
 function homePanel(guild) {
-    const iconURL = guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
+    const icon  = guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
     const { config } = require('./config');
+    const total = Object.keys(config.ticketCategories ?? {}).length;
 
-    const totalEmbeds = Object.keys(config.ticketCategories ?? {}).length;
-    const available   = MODULES.filter(m => m.available).map(m => `${m.emoji}  ${m.label}`).join('\n');
-    const soon        = MODULES.filter(m => !m.available).map(m => `${m.emoji}  ${m.label}`).join('\n');
+    const c = new ContainerBuilder().setAccentColor(GOLD);
 
-    const c = new ContainerBuilder().setAccentColor(0xd4a853);
+    const header = `# ⚙️  Configuration\n-# Sélectionne un module dans le menu ci-dessous.`;
 
-    const headerText = `# ⚙️  Configuration — Eldoria\n-# Sélectionne un module dans le menu ci-dessous pour le configurer.`;
-
-    if (iconURL) {
+    if (icon) {
         c.addSectionComponents(
             new SectionBuilder()
-                .addTextDisplayComponents(new TextDisplayBuilder().setContent(headerText))
-                .setThumbnailAccessory(new ThumbnailBuilder().setURL(iconURL))
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(header))
+                .setThumbnailAccessory(new ThumbnailBuilder().setURL(icon))
         );
     } else {
-        c.addTextDisplayComponents(new TextDisplayBuilder().setContent(headerText));
+        c.addTextDisplayComponents(new TextDisplayBuilder().setContent(header));
     }
 
     c.addSeparatorComponents(sep())
      .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-        `### Modules disponibles\n${available}`
-     ))
-     .addSeparatorComponents(sep())
-     .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-        `### Bientôt disponibles\n${soon}`
-     ))
-     .addSeparatorComponents(sep())
-     .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-        `### État actuel\n` +
-        `🎫  **Tickets** · ${totalEmbeds} embed${totalEmbeds !== 1 ? 's' : ''} configuré${totalEmbeds !== 1 ? 's' : ''}`
+        [
+            `🎫  **Tickets** · ${total} embed${total !== 1 ? 's' : ''} configuré${total !== 1 ? 's' : ''}`,
+            `🔨  **Modération** · *Bientôt disponible*`,
+            `🗃️  **Logs** · *Bientôt disponible*`,
+            `👋  **Arrivées & départs** · *Bientôt disponible*`,
+        ].join('\n')
      ));
 
-    return c;
+    return {
+        components: [selectMenu(null), c],
+        flags: Flags.CV2_Ephemeral,
+    };
 }
 
+// ─── Tickets ──────────────────────────────────────────────────────────────────
+
 function ticketsPanel(guild) {
-    const iconURL = guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
+    const icon   = guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
     const { config } = require('./config');
+    const cats   = config.ticketCategories ?? {};
+    const keys   = Object.keys(cats);
+    const total  = keys.length;
 
-    const cats  = config.ticketCategories ?? {};
-    const keys  = Object.keys(cats);
-    const total = keys.length;
+    const c = new ContainerBuilder().setAccentColor(GOLD);
 
-    const c = new ContainerBuilder().setAccentColor(0xd4a853);
+    const header = `# 🎫  Tickets\n-# ${total === 0 ? 'Aucun embed configuré' : `${total} embed${total !== 1 ? 's' : ''} configuré${total !== 1 ? 's' : ''}`}`;
 
-    const headerText = `# 🎫  Tickets\n-# ${total} embed${total !== 1 ? 's' : ''} configuré${total !== 1 ? 's' : ''}`;
-
-    if (iconURL) {
+    if (icon) {
         c.addSectionComponents(
             new SectionBuilder()
-                .addTextDisplayComponents(new TextDisplayBuilder().setContent(headerText))
-                .setThumbnailAccessory(new ThumbnailBuilder().setURL(iconURL))
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(header))
+                .setThumbnailAccessory(new ThumbnailBuilder().setURL(icon))
         );
     } else {
-        c.addTextDisplayComponents(new TextDisplayBuilder().setContent(headerText));
+        c.addTextDisplayComponents(new TextDisplayBuilder().setContent(header));
     }
 
     if (total === 0) {
         c.addSeparatorComponents(sep())
          .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-            `Aucun embed de tickets configuré.\nUtilise le bouton ci-dessous pour ouvrir le panel de configuration.`
+            `Aucun embed de tickets configuré.\n-# Utilise le bouton ci-dessous pour commencer.`
          ));
     } else {
         for (const key of keys) {
@@ -124,7 +129,7 @@ function ticketsPanel(guild) {
             c.addSeparatorComponents(sep())
              .addTextDisplayComponents(new TextDisplayBuilder().setContent(
                 `### ${e.label}\n` +
-                `${catOk}  Catégorie Discord · ${catRef}\n` +
+                `${catOk}  Catégorie · ${catRef}\n` +
                 `${tsOk}  Transcripts · ${tsRef}\n` +
                 `-# 🎫 *${e.buttonLabel}*`
              ));
@@ -136,69 +141,57 @@ function ticketsPanel(guild) {
         `-# Clique sur **Configurer** pour gérer les embeds de tickets.`
      ));
 
-    return c;
+    const configRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId('config_tickets_open')
+            .setLabel('Configurer')
+            .setEmoji('✏️')
+            .setStyle(ButtonStyle.Primary),
+    );
+
+    return {
+        components: [selectMenu('tickets'), c, homeButton(), configRow],
+        flags: Flags.CV2_Ephemeral,
+    };
 }
 
+// ─── Module indisponible ──────────────────────────────────────────────────────
+
 function unavailablePanel(module, guild) {
-    const iconURL = guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
-    const m = MODULES.find(x => x.value === module) ?? { emoji: '⚙️', label: module };
+    const icon = guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
+    const m    = MODULES.find(x => x.value === module) ?? { emoji: '⚙️', label: module };
 
-    const c = new ContainerBuilder().setAccentColor(0x36393f);
+    const c = new ContainerBuilder().setAccentColor(GREY);
 
-    const headerText = `# ${m.emoji}  ${m.label}\n-# Ce module n'est pas encore disponible.`;
+    const header = `# ${m.emoji}  ${m.label}\n-# Ce module n'est pas encore disponible.`;
 
-    if (iconURL) {
+    if (icon) {
         c.addSectionComponents(
             new SectionBuilder()
-                .addTextDisplayComponents(new TextDisplayBuilder().setContent(headerText))
-                .setThumbnailAccessory(new ThumbnailBuilder().setURL(iconURL))
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(header))
+                .setThumbnailAccessory(new ThumbnailBuilder().setURL(icon))
         );
     } else {
-        c.addTextDisplayComponents(new TextDisplayBuilder().setContent(headerText));
+        c.addTextDisplayComponents(new TextDisplayBuilder().setContent(header));
     }
 
     c.addSeparatorComponents(sep())
      .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-        `Ce module est en cours de développement et sera disponible prochainement.\n\n` +
-        `-# Sélectionne un autre module dans le menu ci-dessous.`
+        `Ce module est en cours de développement.\n-# Reviens plus tard ou sélectionne un autre module.`
      ));
 
-    return c;
+    return {
+        components: [selectMenu(module), c, homeButton()],
+        flags: Flags.CV2_Ephemeral,
+    };
 }
 
-// ─── Boutons d'action par module ──────────────────────────────────────────────
-
-function actionRow(module) {
-    if (module === 'tickets') {
-        return new ActionRowBuilder().addComponents(
-            new ButtonBuilder()
-                .setCustomId('config_tickets_open')
-                .setLabel('Configurer les tickets')
-                .setEmoji('🎫')
-                .setStyle(ButtonStyle.Primary),
-        );
-    }
-    return null;
-}
-
-// ─── Builder principal ────────────────────────────────────────────────────────
+// ─── Dispatcher ──────────────────────────────────────────────────────────────
 
 function buildConfigMessage(module = 'home', guild = null) {
-    let panel;
-
-    if (module === 'home')        panel = homePanel(guild);
-    else if (module === 'tickets') panel = ticketsPanel(guild);
-    else                           panel = unavailablePanel(module, guild);
-
-    const components = [
-        configSelectMenu(module),
-        panel,
-    ];
-
-    const actions = actionRow(module);
-    if (actions) components.push(actions);
-
-    return { components, flags: Flags.CV2_Ephemeral };
+    if (module === 'home')         return homePanel(guild);
+    if (module === 'tickets')      return ticketsPanel(guild);
+    return unavailablePanel(module, guild);
 }
 
-module.exports = { buildConfigMessage, MODULES };
+module.exports = { buildConfigMessage };
