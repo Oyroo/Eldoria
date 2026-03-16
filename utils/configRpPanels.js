@@ -68,10 +68,7 @@ function homePanel(guild) {
         `### Modules RP\n` +
         `🌦️  **Météo** · *Bientôt disponible*\n` +
         `📰  **Journal** · *Bientôt disponible*\n` +
-        `🎭  **Événements RP** · *Bientôt disponible*\n` +
-        `📖  **Lore & Encyclopédie** · *Bientôt disponible*\n` +
-        `🗣️  **Rumeurs** · *Bientôt disponible*\n` +
-        `💰  **Économie RP** · *Bientôt disponible*`
+        `🎭  **Événements RP** · *Bientôt disponible*\n`
      ))
      .addSeparatorComponents(sep())
      .addTextDisplayComponents(new TextDisplayBuilder().setContent(
