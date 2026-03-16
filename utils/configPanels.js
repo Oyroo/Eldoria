@@ -46,7 +46,7 @@ function linksRow() {
     );
 }
 
-// ─── Panel accueil (état par défaut, aucun module sélectionné) ─────────────────
+// ─── Accueil ──────────────────────────────────────────────────────────────────
 
 function homePanel(guild) {
     const icon = guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
@@ -63,22 +63,24 @@ function homePanel(guild) {
     if (icon) section.setThumbnailAccessory(new ThumbnailBuilder().setURL(icon));
     c.addSectionComponents(section);
 
-    c.addSeparatorComponents(new SeparatorBuilder().setDivider(false).setSpacing(1));
-
-    c.addTextDisplayComponents(new TextDisplayBuilder().setContent(
+    // Select DANS le container
+    c.addSeparatorComponents(new SeparatorBuilder().setDivider(false).setSpacing(1))
+     .addActionRowComponents(selectRow(null))
+     .addSeparatorComponents(new SeparatorBuilder().setDivider(false).setSpacing(1))
+     .addTextDisplayComponents(new TextDisplayBuilder().setContent(
         `🧩  *Sélectionnez une catégorie pour modifier ses paramètres.*\n` +
         `🔍  *Certains systèmes ne sont pas encore configurables via le panel : ils seront ajoutés prochainement.*`
-    ));
-
-    c.addSeparatorComponents(sep());
+     ))
+     .addSeparatorComponents(sep())
+     .addActionRowComponents(linksRow());
 
     return {
-        components: [selectRow(null), c, linksRow()],
+        components: [c],
         flags: Flags.CV2_Ephemeral,
     };
 }
 
-// ─── Panel tickets ────────────────────────────────────────────────────────────
+// ─── Tickets ──────────────────────────────────────────────────────────────────
 
 function ticketsPanel(guild) {
     const icon = guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
@@ -86,9 +88,7 @@ function ticketsPanel(guild) {
     const cats  = config.ticketCategories ?? {};
     const keys  = Object.keys(cats);
     const total = keys.length;
-
-    const { get } = require('./tickets');
-    const openCount = Object.keys(get() ?? {}).length;
+    const openCount = Object.keys(require('./tickets').get() ?? {}).length;
 
     const c = new ContainerBuilder().setAccentColor(0xd4a853);
 
@@ -102,6 +102,8 @@ function ticketsPanel(guild) {
     c.addSectionComponents(section);
 
     c.addSeparatorComponents(new SeparatorBuilder().setDivider(false).setSpacing(1))
+     .addActionRowComponents(selectRow('tickets'))
+     .addSeparatorComponents(new SeparatorBuilder().setDivider(false).setSpacing(1))
      .addTextDisplayComponents(new TextDisplayBuilder().setContent(
         `> **Embeds configurés** : ${total}\n` +
         `> **Tickets ouverts** : ${openCount}`
@@ -109,7 +111,7 @@ function ticketsPanel(guild) {
 
     if (total > 0) {
         for (const key of keys) {
-            const e     = cats[key];
+            const e   = cats[key];
             const catOk = e.categoryId          ? '🟢' : '🔴';
             const tsOk  = e.transcriptChannelId ? '🟢' : '🔴';
             const cat   = e.categoryId          ? `<#${e.categoryId}>`          : '*—*';
@@ -129,18 +131,20 @@ function ticketsPanel(guild) {
          ));
     }
 
-    c.addSeparatorComponents(sep());
-
-    const actionsRow = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-            .setCustomId('config_tickets_open')
-            .setLabel('Gérer les embeds')
-            .setEmoji('✏️')
-            .setStyle(ButtonStyle.Primary),
-    );
+    c.addSeparatorComponents(sep())
+     .addActionRowComponents(
+        new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setCustomId('config_tickets_open')
+                .setLabel('Gérer les embeds')
+                .setEmoji('✏️')
+                .setStyle(ButtonStyle.Primary),
+        )
+     )
+     .addActionRowComponents(linksRow());
 
     return {
-        components: [selectRow('tickets'), c, actionsRow, linksRow()],
+        components: [c],
         flags: Flags.CV2_Ephemeral,
     };
 }
@@ -164,14 +168,17 @@ function unavailablePanel(module, guild) {
     c.addSectionComponents(section);
 
     c.addSeparatorComponents(new SeparatorBuilder().setDivider(false).setSpacing(1))
+     .addActionRowComponents(selectRow(module))
+     .addSeparatorComponents(new SeparatorBuilder().setDivider(false).setSpacing(1))
      .addTextDisplayComponents(new TextDisplayBuilder().setContent(
         `🧩  *Sélectionnez une catégorie pour modifier ses paramètres.*\n` +
         `🔍  *Ce système n'est pas encore configurable via le panel : il sera ajouté prochainement.*`
      ))
-     .addSeparatorComponents(sep());
+     .addSeparatorComponents(sep())
+     .addActionRowComponents(linksRow());
 
     return {
-        components: [selectRow(module), c, linksRow()],
+        components: [c],
         flags: Flags.CV2_Ephemeral,
     };
 }
