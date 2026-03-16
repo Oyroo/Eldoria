@@ -1,61 +1,42 @@
-const { Events, MessageFlags } = require('discord.js');
+const { Events } = require('discord.js');
 
 module.exports = {
     name: Events.InteractionCreate,
-
     async execute(interaction) {
-        try {
-
-            // ── Autocomplete ──────────────────────────────────────────────────
-            if (interaction.isAutocomplete()) {
-                const command = interaction.client.commands.get(interaction.commandName);
-                if (command?.autocomplete) await command.autocomplete(interaction);
-                return;
-            }
-
-            // ── Slash commands ────────────────────────────────────────────────
-            if (interaction.isChatInputCommand()) {
-                const command = interaction.client.commands.get(interaction.commandName);
-                if (!command) return;
-                await command.execute(interaction);
-                return;
-            }
-
-            // ── Sélecteurs (choix dans le panneau de configuration) ─────────────
-            if (interaction.isStringSelectMenu()) {
-                const { handleSelect } = require('../interactions/selects');
-                await handleSelect(interaction);
-                return;
-            }
-
-            // ── Boutons ───────────────────────────────────────────────────────
-            if (interaction.isButton()) {
-                const { handleButton } = require('../interactions/buttons');
-                await handleButton(interaction);
-                return;
-            }
-
-            // ── Modals ────────────────────────────────────────────────────────
-            if (interaction.isModalSubmit()) {
-                const { handleModal } = require('../interactions/modals');
-                await handleModal(interaction);
-                return;
-            }
-
-        } catch (err) {
-            console.error(`Erreur interaction [${interaction.customId ?? interaction.commandName}] :`, err);
-
-            const payload = {
-                content: `❌ Une erreur est survenue : \`${err.message}\``,
-                flags:   MessageFlags.Ephemeral,
-            };
+        // Handle slash commands
+        if (interaction.isChatInputCommand()) {
+            const command = interaction.client.commands.get(interaction.commandName);
+            if (!command) return;
             try {
-                if (interaction.replied || interaction.deferred) {
-                    await interaction.followUp(payload);
-                } else {
-                    await interaction.reply(payload);
+                await command.execute(interaction);
+            } catch (error) {
+                console.error(error);
+                await interaction.reply({ content: 'There was an error executing this command.', ephemeral: true });
+            }
+        }
+        // Handle components (buttons, modals)
+        else if (interaction.isButton() || interaction.type === 5) {
+            const command = interaction.client.commands.get(interaction.message?.interaction?.commandName);
+            if (command && command.handleComponent) {
+                try {
+                    await command.handleComponent(interaction);
+                } catch (error) {
+                    console.error(error);
+                    await interaction.reply({ content: 'There was an error handling the component.', ephemeral: true });
                 }
-            } catch {}
+            }
+        }
+        // Handle modal submit
+        else if (interaction.type === 5) {
+            const command = interaction.client.commands.get(interaction.customId.split('_')[0]);
+            if (command && command.handleComponent) {
+                try {
+                    await command.handleComponent(interaction);
+                } catch (error) {
+                    console.error(error);
+                    await interaction.reply({ content: 'There was an error handling the modal.', ephemeral: true });
+                }
+            }
         }
     },
 };
