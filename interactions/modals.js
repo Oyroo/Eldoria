@@ -1,4 +1,4 @@
-const { MessageFlags, EmbedBuilder, AttachmentBuilder } = require('discord.js');
+const { EmbedBuilder, AttachmentBuilder } = require('discord.js');
 const { config, saveConfig }                 = require('../utils/config');
 const { hexToInt, uniqueKey }                = require('../utils/helpers');
 const { buildMainPanel, buildCategoryPanel, buildWelcomePanel } = require('../utils/builders');
@@ -60,14 +60,14 @@ async function handleModal(interaction) {
         saveConfig();
 
         const [container, actionRow] = buildCategoryPanel(catKey, null, icon);
-        return interaction.update({ components: [container, actionRow], flags: MessageFlags.IsComponentsV2 });
+        return interaction.update({ components: [container, actionRow] });
     }
 
     // ── Modifier l'embed ──────────────────────────────────────
     if (id.startsWith('cfg_modal_edit:')) {
         const catKey = id.split(':')[1];
         const cat    = config.ticketCategories[catKey];
-        if (!cat) return interaction.update({ components: [buildMainPanel(icon)], flags: MessageFlags.IsComponentsV2 });
+        if (!cat) return interaction.update({ components: [buildMainPanel(icon)] });
 
         const btnLabel = interaction.fields.getTextInputValue('button_label').trim();
         cat.title       = interaction.fields.getTextInputValue('title');
@@ -76,21 +76,21 @@ async function handleModal(interaction) {
         saveConfig();
 
         const [container, actionRow] = buildCategoryPanel(catKey, null, icon);
-        return interaction.update({ components: [container, actionRow], flags: MessageFlags.IsComponentsV2 });
+        return interaction.update({ components: [container, actionRow] });
     }
 
     // ── Modifier la couleur ───────────────────────────────────────────────────
     if (id.startsWith('cfg_modal_color:')) {
         const catKey  = id.split(':')[1];
         const cat     = config.ticketCategories[catKey];
-        if (!cat) return interaction.update({ components: [buildMainPanel(icon)], flags: MessageFlags.IsComponentsV2 });
+        if (!cat) return interaction.update({ components: [buildMainPanel(icon)] });
 
         const colorRaw = interaction.fields.getTextInputValue('color').trim();
         cat.color = hexToInt(colorRaw);
         saveConfig();
 
         const [container, actionRow] = buildCategoryPanel(catKey, null, icon);
-        return interaction.update({ components: [container, actionRow], flags: MessageFlags.IsComponentsV2 });
+        return interaction.update({ components: [container, actionRow] });
     }
 
     // ── Modifier le texte bienvenue/départ ─────────────────────────────────────
@@ -110,7 +110,6 @@ async function handleModal(interaction) {
             components: [container, actionRow],
             embeds:     [embed],
             files,
-            flags:      MessageFlags.IsComponentsV2,
         });
     }
 }

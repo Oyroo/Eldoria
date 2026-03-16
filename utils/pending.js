@@ -15,7 +15,6 @@ async function patchPanel(token, appId, components) {
             {
                 body: {
                     components: list.map(c => c.toJSON()),
-                    flags:      MessageFlags.IsComponentsV2,
                 },
             }
         );

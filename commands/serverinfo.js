@@ -58,7 +58,6 @@ module.exports = {
 
         await interaction.editReply({
             components: [container],
-            flags: MessageFlags.IsComponentsV2,
         });
     },
 };

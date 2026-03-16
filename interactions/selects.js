@@ -1,4 +1,4 @@
-const { MessageFlags, EmbedBuilder, AttachmentBuilder } = require('discord.js');
+const { EmbedBuilder, AttachmentBuilder } = require('discord.js');
 const { buildConfigHomePanel, buildWelcomePanel, buildMainPanel } = require('../utils/builders');
 const { createWelcomeImage } = require('../utils/welcomeImage');
 const { config } = require('../utils/config');
@@ -38,7 +38,7 @@ async function handleSelect(interaction) {
 
     switch (value) {
         case 'home':
-            return interaction.update({ components: [buildConfigHomePanel(icon)], flags: MessageFlags.IsComponentsV2 });
+            return interaction.update({ components: [buildConfigHomePanel(icon)] });
         case 'welcome-goodbye':
             {
                 const [container, actionRow] = buildWelcomePanel(icon);
@@ -47,11 +47,10 @@ async function handleSelect(interaction) {
                     components: [container, actionRow],
                     embeds:     [embed],
                     files,
-                    flags:      MessageFlags.IsComponentsV2,
                 });
             }
         case 'tickets':
-            return interaction.update({ components: [buildMainPanel(icon)], flags: MessageFlags.IsComponentsV2 });
+            return interaction.update({ components: [buildMainPanel(icon)] });
         default: {
             const warning = new EmbedBuilder()
                 .setColor(0xED4245)
@@ -60,7 +59,6 @@ async function handleSelect(interaction) {
             return interaction.update({
                 embeds: [warning],
                 components: [buildConfigHomePanel(icon)],
-                flags: MessageFlags.IsComponentsV2,
             });
         }
     }

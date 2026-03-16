@@ -12,7 +12,7 @@ module.exports = {
 
         await interaction.reply({
             components: [buildMainPanel(iconURL)],
-            flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+            flags: MessageFlags.Ephemeral,
         });
     },
 };
