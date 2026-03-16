@@ -7,10 +7,7 @@ const {
 
 const Flags = require('./flags');
 
-// ─── Modules ──────────────────────────────────────────────────────────────────
-
 const MODULES = [
-    { value: 'home',       label: 'Accueil',            emoji: '🏡', available: true  },
     { value: 'tickets',    label: 'Tickets',            emoji: '🎫', available: true  },
     { value: 'moderation', label: 'Modération',         emoji: '🔨', available: false },
     { value: 'logs',       label: 'Logs',               emoji: '🗃️', available: false },
@@ -21,11 +18,11 @@ const MODULES = [
     { value: 'report',     label: 'Signalements',       emoji: '🚨', available: false },
 ];
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+function sep() {
+    return new SeparatorBuilder().setDivider(true).setSpacing(2);
+}
 
-function sep() { return new SeparatorBuilder().setDivider(true).setSpacing(2); }
-
-function selectRow(current = 'home') {
+function selectRow(current = null) {
     return new ActionRowBuilder().addComponents(
         new StringSelectMenuBuilder()
             .setCustomId('config_select')
@@ -42,133 +39,108 @@ function selectRow(current = 'home') {
     );
 }
 
-// Boutons liens en bas (comme DraftBot : Panel Web / Support / Docs)
 function linksRow() {
     return new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setStyle(ButtonStyle.Link).setURL('https://discord.gg/').setLabel('Support Discord'),
-        new ButtonBuilder().setStyle(ButtonStyle.Link).setURL('https://github.com/').setLabel('GitHub'),
+        new ButtonBuilder().setStyle(ButtonStyle.Link).setURL('https://discord.gg/eldoria').setLabel('Support Discord'),
+        new ButtonBuilder().setStyle(ButtonStyle.Link).setURL('https://github.com/Oyroo/Eldoria').setLabel('Documentation'),
     );
 }
 
-// ─── Accueil ──────────────────────────────────────────────────────────────────
+// ─── Panel accueil (état par défaut, aucun module sélectionné) ─────────────────
 
 function homePanel(guild) {
-    const icon       = guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
-    const guildName  = guild?.name ?? 'Serveur';
-    const memberCount = guild?.memberCount?.toLocaleString('fr-FR') ?? '—';
-    const createdAt  = guild?.createdAt
-        ? `<t:${Math.floor(guild.createdAt.getTime() / 1000)}:D>`
-        : '—';
-
-    const { config } = require('./config');
-    const totalEmbeds = Object.keys(config.ticketCategories ?? {}).length;
+    const icon = guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
 
     const c = new ContainerBuilder().setAccentColor(0xd4a853);
 
-    const headerText =
-        `# ⚙️  Configuration de ${guildName}\n` +
-        `Bienvenue dans le panel de configuration d'Eldoria.\n` +
-        `Grâce à cette commande, vous pourrez configurer les différents systèmes proposés dans le sélecteur ci-dessus.`;
+    const section = new SectionBuilder().addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+            `# ⚙️  Configuration\n` +
+            `-# Choisissez un système pour accéder à sa configuration.\n` +
+            `-# Cette commande regroupe tous les paramètres du bot.`
+        )
+    );
+    if (icon) section.setThumbnailAccessory(new ThumbnailBuilder().setURL(icon));
+    c.addSectionComponents(section);
 
-    if (icon) {
-        c.addSectionComponents(
-            new SectionBuilder()
-                .addTextDisplayComponents(new TextDisplayBuilder().setContent(headerText))
-                .setThumbnailAccessory(new ThumbnailBuilder().setURL(icon))
-        );
-    } else {
-        c.addTextDisplayComponents(new TextDisplayBuilder().setContent(headerText));
-    }
+    c.addSeparatorComponents(new SeparatorBuilder().setDivider(false).setSpacing(1));
 
-    c.addSeparatorComponents(sep())
-     .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-        `### Informations du serveur\n` +
-        `> 👥  **Membres** : ${memberCount}\n` +
-        `> 📅  **Créé le** : ${createdAt}`
-     ))
-     .addSeparatorComponents(sep())
-     .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-        `### État des modules\n` +
-        `🎫  **Tickets** — ${totalEmbeds} embed${totalEmbeds !== 1 ? 's' : ''} configuré${totalEmbeds !== 1 ? 's' : ''}\n` +
-        `🔨  **Modération** — *Bientôt disponible*\n` +
-        `🗃️  **Logs** — *Bientôt disponible*\n` +
-        `👋  **Arrivées & départs** — *Bientôt disponible*\n` +
-        `📈  **Niveaux** — *Bientôt disponible*`
-     ));
+    c.addTextDisplayComponents(new TextDisplayBuilder().setContent(
+        `🧩  *Sélectionnez une catégorie pour modifier ses paramètres.*\n` +
+        `🔍  *Certains systèmes ne sont pas encore configurables via le panel : ils seront ajoutés prochainement.*`
+    ));
+
+    c.addSeparatorComponents(sep());
 
     return {
-        components: [selectRow('home'), c, linksRow()],
+        components: [selectRow(null), c, linksRow()],
         flags: Flags.CV2_Ephemeral,
     };
 }
 
-// ─── Tickets ──────────────────────────────────────────────────────────────────
+// ─── Panel tickets ────────────────────────────────────────────────────────────
 
 function ticketsPanel(guild) {
-    const icon   = guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
+    const icon = guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
     const { config } = require('./config');
-    const cats   = config.ticketCategories ?? {};
-    const keys   = Object.keys(cats);
-    const total  = keys.length;
+    const cats  = config.ticketCategories ?? {};
+    const keys  = Object.keys(cats);
+    const total = keys.length;
+
+    const { get } = require('./tickets');
+    const openCount = Object.keys(get() ?? {}).length;
 
     const c = new ContainerBuilder().setAccentColor(0xd4a853);
 
-    const headerText =
-        `# 🎫  Tickets\n` +
-        `Configurez le système de tickets de votre serveur.\n` +
-        `Chaque embed correspond à un type de demande avec ses propres paramètres.`;
+    const section = new SectionBuilder().addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+            `# 🎫  Tickets\n` +
+            `-# Configurez le système de tickets de votre serveur.`
+        )
+    );
+    if (icon) section.setThumbnailAccessory(new ThumbnailBuilder().setURL(icon));
+    c.addSectionComponents(section);
 
-    if (icon) {
-        c.addSectionComponents(
-            new SectionBuilder()
-                .addTextDisplayComponents(new TextDisplayBuilder().setContent(headerText))
-                .setThumbnailAccessory(new ThumbnailBuilder().setURL(icon))
-        );
-    } else {
-        c.addTextDisplayComponents(new TextDisplayBuilder().setContent(headerText));
-    }
-
-    c.addSeparatorComponents(sep())
+    c.addSeparatorComponents(new SeparatorBuilder().setDivider(false).setSpacing(1))
      .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-        `### Paramètres\n` +
         `> **Embeds configurés** : ${total}\n` +
-        `> **Tickets ouverts** : ${Object.keys(require('./tickets').get() ?? {}).length}`
+        `> **Tickets ouverts** : ${openCount}`
      ));
 
     if (total > 0) {
-        c.addSeparatorComponents(sep())
-         .addTextDisplayComponents(new TextDisplayBuilder().setContent(`### Embeds actifs`));
-
         for (const key of keys) {
-            const e      = cats[key];
-            const catOk  = e.categoryId          ? '🟢' : '🔴';
-            const tsOk   = e.transcriptChannelId  ? '🟢' : '🔴';
-            const catRef = e.categoryId          ? `<#${e.categoryId}>`          : '*Non définie*';
-            const tsRef  = e.transcriptChannelId ? `<#${e.transcriptChannelId}>` : '*Non défini*';
+            const e     = cats[key];
+            const catOk = e.categoryId          ? '🟢' : '🔴';
+            const tsOk  = e.transcriptChannelId ? '🟢' : '🔴';
+            const cat   = e.categoryId          ? `<#${e.categoryId}>`          : '*—*';
+            const ts    = e.transcriptChannelId ? `<#${e.transcriptChannelId}>` : '*—*';
 
-            c.addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                `\n**${e.label}**\n` +
-                `${catOk} Catégorie · ${catRef}  ${tsOk} Transcripts · ${tsRef}\n` +
+            c.addSeparatorComponents(new SeparatorBuilder().setDivider(false).setSpacing(1))
+             .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                `**${e.label}**\n` +
+                `${catOk} Catégorie : ${cat}  ·  ${tsOk} Transcripts : ${ts}\n` +
                 `-# 🎫 *${e.buttonLabel}*`
-            ));
+             ));
         }
     } else {
-        c.addSeparatorComponents(sep())
+        c.addSeparatorComponents(new SeparatorBuilder().setDivider(false).setSpacing(1))
          .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-            `> ℹ️  Aucun embed configuré. Utilise le bouton ci-dessous pour commencer.`
+            `🧩  *Aucun embed configuré. Utilisez le bouton ci-dessous pour commencer.*`
          ));
     }
 
-    const configRow = new ActionRowBuilder().addComponents(
+    c.addSeparatorComponents(sep());
+
+    const actionsRow = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
             .setCustomId('config_tickets_open')
-            .setLabel('Gérer les embeds de tickets')
+            .setLabel('Gérer les embeds')
             .setEmoji('✏️')
             .setStyle(ButtonStyle.Primary),
     );
 
     return {
-        components: [selectRow('tickets'), c, configRow, linksRow()],
+        components: [selectRow('tickets'), c, actionsRow, linksRow()],
         flags: Flags.CV2_Ephemeral,
     };
 }
@@ -179,27 +151,24 @@ function unavailablePanel(module, guild) {
     const icon = guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
     const m    = MODULES.find(x => x.value === module) ?? { emoji: '⚙️', label: module };
 
-    const c = new ContainerBuilder().setAccentColor(0x4f545c);
+    const c = new ContainerBuilder().setAccentColor(0xd4a853);
 
-    const headerText =
-        `# ${m.emoji}  ${m.label}\n` +
-        `Ce module n'est pas encore disponible sur Eldoria.`;
+    const section = new SectionBuilder().addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+            `# ${m.emoji}  ${m.label}\n` +
+            `-# Choisissez un système pour accéder à sa configuration.\n` +
+            `-# Cette commande regroupe tous les paramètres du bot.`
+        )
+    );
+    if (icon) section.setThumbnailAccessory(new ThumbnailBuilder().setURL(icon));
+    c.addSectionComponents(section);
 
-    if (icon) {
-        c.addSectionComponents(
-            new SectionBuilder()
-                .addTextDisplayComponents(new TextDisplayBuilder().setContent(headerText))
-                .setThumbnailAccessory(new ThumbnailBuilder().setURL(icon))
-        );
-    } else {
-        c.addTextDisplayComponents(new TextDisplayBuilder().setContent(headerText));
-    }
-
-    c.addSeparatorComponents(sep())
+    c.addSeparatorComponents(new SeparatorBuilder().setDivider(false).setSpacing(1))
      .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-        `> Ce module est en cours de développement et sera disponible prochainement.\n` +
-        `> Sélectionne un autre module dans le menu ci-dessus.`
-     ));
+        `🧩  *Sélectionnez une catégorie pour modifier ses paramètres.*\n` +
+        `🔍  *Ce système n'est pas encore configurable via le panel : il sera ajouté prochainement.*`
+     ))
+     .addSeparatorComponents(sep());
 
     return {
         components: [selectRow(module), c, linksRow()],
@@ -210,8 +179,8 @@ function unavailablePanel(module, guild) {
 // ─── Dispatcher ──────────────────────────────────────────────────────────────
 
 function buildConfigMessage(module = 'home', guild = null) {
-    if (module === 'home')    return homePanel(guild);
-    if (module === 'tickets') return ticketsPanel(guild);
+    if (!module || module === 'home') return homePanel(guild);
+    if (module === 'tickets')         return ticketsPanel(guild);
     return unavailablePanel(module, guild);
 }
 
