@@ -12,7 +12,7 @@ module.exports = {
         const iconURL = interaction.guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
         await interaction.reply({
             components: [buildConfigHomePanel(iconURL)],
-            flags: MessageFlags.Ephemeral,
+            flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
         });
     },
 };

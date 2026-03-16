@@ -84,14 +84,14 @@ async function handleButton(interaction) {
     if (id === 'cfg_back_home') {
         return interaction.update({
             components: [buildConfigHomePanel(icon)],
-            
+            flags:      MessageFlags.IsComponentsV2,
         });
     }
 
     if (id === 'cfg_back') {
         return interaction.update({
             components: [buildMainPanel(icon)],
-            
+            flags:      MessageFlags.IsComponentsV2,
         });
     }
 
@@ -104,7 +104,7 @@ async function handleButton(interaction) {
             guildId: interaction.guildId,
         };
         const [container, actionRow] = buildAwaitingPanel('set_welcome', 'welcome');
-        return interaction.update({ components: [container, actionRow]});
+        return interaction.update({ components: [container, actionRow], flags: MessageFlags.IsComponentsV2 });
     }
 
     if (id === 'cfg_welcome_set_leave') {
@@ -116,7 +116,7 @@ async function handleButton(interaction) {
             guildId: interaction.guildId,
         };
         const [container, actionRow] = buildAwaitingPanel('set_leave', 'welcome');
-        return interaction.update({ components: [container, actionRow]});
+        return interaction.update({ components: [container, actionRow], flags: MessageFlags.IsComponentsV2 });
     }
 
     if (id.startsWith('cfg_welcome_preview:')) {
@@ -124,11 +124,16 @@ async function handleButton(interaction) {
         const [container, actionRow] = buildWelcomePanel(icon);
 
         const { embed, files } = await generateWelcomePreview(interaction, type);
-        return interaction.update({
+
+        await interaction.update({
             components: [container, actionRow],
-            embeds:     [embed],
+            flags:      MessageFlags.IsComponentsV2,
+        });
+
+        return interaction.followUp({
+            embeds:    [embed],
             files,
-            
+            ephemeral: true,
         });
     }
 
@@ -156,13 +161,10 @@ async function handleButton(interaction) {
     if (id.startsWith('cfg_open:')) {
         const catKey = id.split(':')[1];
         if (!config.ticketCategories[catKey])
-            return interaction.update({ components: [buildMainPanel(icon)]});
+            return interaction.update({ components: [buildMainPanel(icon)], flags: MessageFlags.IsComponentsV2 });
 
         const [container, actionRow] = buildCategoryPanel(catKey, null, icon);
-        return interaction.update({
-            components: [container, actionRow],
-            
-        });
+        return interaction.update({ components: [container, actionRow], flags: MessageFlags.IsComponentsV2 });
     }
 
     // Retour depuis la page de confirmation vers la page embed
@@ -171,7 +173,7 @@ async function handleButton(interaction) {
         const [container, actionRow] = buildCategoryPanel(catKey, null, icon);
         return interaction.update({
             components: [container, actionRow],
-            
+            flags:      MessageFlags.IsComponentsV2,
         });
     }
 
@@ -200,7 +202,7 @@ async function handleButton(interaction) {
     if (id.startsWith('cfg_edit:')) {
         const catKey = id.split(':')[1];
         const cat    = config.ticketCategories[catKey];
-        if (!cat) return interaction.update({ components: [buildMainPanel(icon)]});
+        if (!cat) return interaction.update({ components: [buildMainPanel(icon)], flags: MessageFlags.IsComponentsV2 });
 
         const modal = new ModalBuilder().setCustomId(`cfg_modal_edit:${catKey}`).setTitle(`Modifier — ${cat.label}`);
         modal.addComponents(
@@ -214,7 +216,7 @@ async function handleButton(interaction) {
     if (id.startsWith('cfg_color:')) {
         const catKey = id.split(':')[1];
         const cat    = config.ticketCategories[catKey];
-        if (!cat) return interaction.update({ components: [buildMainPanel(icon)]});
+        if (!cat) return interaction.update({ components: [buildMainPanel(icon)], flags: MessageFlags.IsComponentsV2 });
 
         const modal = new ModalBuilder().setCustomId(`cfg_modal_color:${catKey}`).setTitle(`Couleur — ${cat.label}`);
         modal.addComponents(
@@ -235,21 +237,21 @@ async function handleButton(interaction) {
         const catKey = id.split(':')[1];
         pendingInputs[interaction.user.id] = { type: 'setcat', catKey, token: interaction.token, appId: interaction.client.application.id, guildId: interaction.guildId };
         const [container, actionRow] = buildAwaitingPanel('setcat', catKey);
-        return interaction.update({ components: [container, actionRow]});
+        return interaction.update({ components: [container, actionRow], flags: MessageFlags.IsComponentsV2 });
     }
 
     if (id.startsWith('cfg_transcript:')) {
         const catKey = id.split(':')[1];
         pendingInputs[interaction.user.id] = { type: 'transcript', catKey, token: interaction.token, appId: interaction.client.application.id, guildId: interaction.guildId };
         const [container, actionRow] = buildAwaitingPanel('transcript', catKey);
-        return interaction.update({ components: [container, actionRow]});
+        return interaction.update({ components: [container, actionRow], flags: MessageFlags.IsComponentsV2 });
     }
 
     if (id.startsWith('cfg_send:')) {
         const catKey = id.split(':')[1];
         pendingInputs[interaction.user.id] = { type: 'sendchan', catKey, token: interaction.token, appId: interaction.client.application.id, guildId: interaction.guildId };
         const [container, actionRow] = buildAwaitingPanel('sendchan', catKey);
-        return interaction.update({ components: [container, actionRow]});
+        return interaction.update({ components: [container, actionRow], flags: MessageFlags.IsComponentsV2 });
     }
 
     if (id === 'cfg_cancel') {
@@ -258,9 +260,9 @@ async function handleButton(interaction) {
         delete pendingInputs[interaction.user.id];
         if (catKey && config.ticketCategories[catKey]) {
             const [container, actionRow] = buildCategoryPanel(catKey, null, icon);
-            return interaction.update({ components: [container, actionRow]});
+            return interaction.update({ components: [container, actionRow], flags: MessageFlags.IsComponentsV2 });
         }
-        return interaction.update({ components: [buildMainPanel(icon)]});
+        return interaction.update({ components: [buildMainPanel(icon)], flags: MessageFlags.IsComponentsV2 });
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -270,7 +272,7 @@ async function handleButton(interaction) {
     if (id.startsWith('cfg_save:')) {
         const catKey = id.split(':')[1];
         if (!config.ticketCategories[catKey])
-            return interaction.update({ components: [buildMainPanel(icon)]});
+            return interaction.update({ components: [buildMainPanel(icon)], flags: MessageFlags.IsComponentsV2 });
 
         saveConfig();
 
@@ -281,7 +283,7 @@ async function handleButton(interaction) {
             new ButtonBuilder().setCustomId(`cfg_preview:${catKey}`).setLabel('Aperçu complet').setEmoji('👁️').setStyle(ButtonStyle.Secondary),
             new ButtonBuilder().setCustomId(`cfg_delete_confirm:${catKey}`).setLabel('Supprimer').setEmoji('🗑️').setStyle(ButtonStyle.Danger),
         );
-        return interaction.update({ components: [container, confirmedRow]});
+        return interaction.update({ components: [container, confirmedRow], flags: MessageFlags.IsComponentsV2 });
     }
 
     if (id.startsWith('cfg_preview:')) {
@@ -300,10 +302,10 @@ async function handleButton(interaction) {
     if (id.startsWith('cfg_delete_confirm:')) {
         const catKey = id.split(':')[1];
         if (!config.ticketCategories[catKey])
-            return interaction.update({ components: [buildMainPanel(icon)]});
+            return interaction.update({ components: [buildMainPanel(icon)], flags: MessageFlags.IsComponentsV2 });
 
         const [container, actionRow] = buildDeleteConfirmPanel(catKey);
-        return interaction.update({ components: [container, actionRow]});
+        return interaction.update({ components: [container, actionRow], flags: MessageFlags.IsComponentsV2 });
     }
 
     // Confirmation → suppression effective
@@ -311,7 +313,7 @@ async function handleButton(interaction) {
         const catKey = id.split(':')[1];
         delete config.ticketCategories[catKey];
         saveConfig();
-        return interaction.update({ components: [buildMainPanel(icon)]});
+        return interaction.update({ components: [buildMainPanel(icon)], flags: MessageFlags.IsComponentsV2 });
     }
 
     // ════════════════════════════════════════════════════════════════════════

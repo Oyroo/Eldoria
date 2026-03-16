@@ -1,4 +1,4 @@
-const { EmbedBuilder, AttachmentBuilder } = require('discord.js');
+const { MessageFlags, EmbedBuilder, AttachmentBuilder } = require('discord.js');
 const { buildConfigHomePanel, buildWelcomePanel, buildMainPanel } = require('../utils/builders');
 const { createWelcomeImage } = require('../utils/welcomeImage');
 const { config } = require('../utils/config');
@@ -38,27 +38,39 @@ async function handleSelect(interaction) {
 
     switch (value) {
         case 'home':
-            return interaction.update({ components: [buildConfigHomePanel(icon)] });
+            return interaction.update({ components: [buildConfigHomePanel(icon)], flags: MessageFlags.IsComponentsV2 });
         case 'welcome-goodbye':
             {
                 const [container, actionRow] = buildWelcomePanel(icon);
                 const { embed, files } = await generateWelcomePreview(interaction, 'welcome');
-                return interaction.update({
+
+                await interaction.update({
                     components: [container, actionRow],
-                    embeds:     [embed],
+                    flags:      MessageFlags.IsComponentsV2,
+                });
+
+                return interaction.followUp({
+                    embeds: [embed],
                     files,
+                    ephemeral: true,
                 });
             }
         case 'tickets':
-            return interaction.update({ components: [buildMainPanel(icon)] });
+            return interaction.update({ components: [buildMainPanel(icon)], flags: MessageFlags.IsComponentsV2 });
         default: {
             const warning = new EmbedBuilder()
                 .setColor(0xED4245)
                 .setTitle('⚠️ Section non disponible')
                 .setDescription('Cette section n’est pas encore disponible dans ce panel.');
-            return interaction.update({
-                embeds: [warning],
+
+            await interaction.update({
                 components: [buildConfigHomePanel(icon)],
+                flags:      MessageFlags.IsComponentsV2,
+            });
+
+            return interaction.followUp({
+                embeds:    [warning],
+                ephemeral: true,
             });
         }
     }
