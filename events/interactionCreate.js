@@ -19,6 +19,11 @@ module.exports = {
             }
 
             if (interaction.isStringSelectMenu()) {
+                if (interaction.customId === 'config_rp_select') {
+                    const { handleSelectRp } = require('../interactions/selects_rp');
+                    await handleSelectRp(interaction);
+                    return;
+                }
                 const { handleSelect } = require('../interactions/selects');
                 await handleSelect(interaction);
                 return;
@@ -29,6 +34,11 @@ module.exports = {
                 if (interaction.customId === 'config_home') {
                     const { buildConfigMessage } = require('../utils/configPanels');
                     return interaction.update(buildConfigMessage('home', interaction.guild));
+                }
+
+                if (interaction.customId === 'config_rp_home') {
+                    const { buildConfigRpMessage } = require('../utils/configRpPanels');
+                    return interaction.update(buildConfigRpMessage('home', interaction.guild));
                 }
 
                 // Ouvre le panel ticket-config depuis /config
