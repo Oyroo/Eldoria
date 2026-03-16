@@ -38,6 +38,11 @@ module.exports = {
                     return interaction.update({ components: [mainPanel(icon)], flags: Flags.CV2 });
                 }
 
+                if (interaction.customId === 'cfg_back_to_config') {
+                    const { buildConfigMessage } = require('../utils/configPanels');
+                    return interaction.update(buildConfigMessage('tickets', interaction.guild));
+                }
+
                 const { handleButton } = require('../interactions/buttons');
                 await handleButton(interaction);
                 return;
