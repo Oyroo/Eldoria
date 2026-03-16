@@ -274,10 +274,6 @@ function buildMainPanel(guildIconURL = null) {
                     .setLabel('Nouvel embed')
                     .setEmoji('➕')
                     .setStyle(ButtonStyle.Success),
-            )
-        )
-        .addActionRowComponents(
-            new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
                     .setCustomId('cfg_back_home')
                     .setLabel('Accueil')
