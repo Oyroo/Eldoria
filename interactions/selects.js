@@ -52,12 +52,17 @@ async function handleSelect(interaction) {
             }
         case 'tickets':
             return interaction.update({ components: [buildMainPanel(icon)], flags: MessageFlags.IsComponentsV2 });
-        default:
+        default: {
+            const warning = new EmbedBuilder()
+                .setColor(0xED4245)
+                .setTitle('⚠️ Section non disponible')
+                .setDescription('Cette section n’est pas encore disponible dans ce panel.');
             return interaction.update({
-                content: '⚠️ Cette section n’est pas encore disponible.',
+                embeds: [warning],
                 components: [buildConfigHomePanel(icon)],
                 flags: MessageFlags.IsComponentsV2,
             });
+        }
     }
 }
 
