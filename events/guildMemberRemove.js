@@ -22,7 +22,11 @@ module.exports = {
             || null;
         if (!channel) return;
 
-        const leaveImage = await createWelcomeImage(member, 'leave').catch(() => null);
+        const format = (template) => template
+            .replace(/\{user\}/g, member.user.tag)
+            .replace(/\{guild\}/g, member.guild.name);
+
+        const leaveImage = await createWelcomeImage(member, 'leave', { message: format(config.leaveText ?? '') }).catch(() => null);
         const attachment = leaveImage
             ? new AttachmentBuilder(leaveImage, { name: 'goodbye.png' })
             : null;
@@ -30,7 +34,7 @@ module.exports = {
         const embed = new EmbedBuilder()
             .setColor(0xFF6B6B)
             .setTitle('👋 Au revoir !')
-            .setDescription(`**${member.user.tag}** a quitté **${member.guild.name}**.`)
+            .setDescription(format(config.leaveText ?? `**${member.user.tag}** a quitté **${member.guild.name}**.`))
             .setTimestamp();
 
         if (attachment) {

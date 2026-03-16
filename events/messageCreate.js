@@ -83,15 +83,6 @@ module.exports = {
             } catch {
                 errorMsg = 'Salon introuvable avec cet ID.';
             }
-        } else if (pending.type === 'set_rules') {
-            try {
-                await message.guild.channels.fetch(resolvedId);
-                config.rulesChannelId = resolvedId;
-                saveConfig();
-            } catch {
-                errorMsg = 'Salon introuvable avec cet ID.';
-            }
-        }
 
         if (pending.catKey === 'welcome') {
             const [container, actionRow] = buildWelcomePanel(icon, errorMsg);

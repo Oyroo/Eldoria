@@ -14,10 +14,14 @@ try {
  * @param {'welcome'|'leave'} type
  * @returns {Promise<Buffer>}
  */
-async function createWelcomeImage(member, type = 'welcome') {
+async function createWelcomeImage(member, type = 'welcome', options = {}) {
     if (!createCanvas || !loadImage) {
         throw new Error('Canvas module not available');
     }
+
+    const messageLine = options.message ?? (type === 'welcome'
+        ? 'Sur ' + member.guild.name + ', tu peux explorer et t\'amuser !'
+        : 'Tu vas nous manquer. Reviens quand tu veux !');
 
     const width = 960;
     const height = 360;
@@ -75,12 +79,7 @@ async function createWelcomeImage(member, type = 'welcome') {
 
     ctx.font = '26px Sans';
     ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-
-    if (type === 'welcome') {
-        ctx.fillText(`Sur ${member.guild.name}, tu peux explorer et t'amuser !`, 320, 240);
-    } else {
-        ctx.fillText(`Tu vas nous manquer. Reviens quand tu veux !`, 320, 240);
-    }
+    ctx.fillText(messageLine, 320, 240);
 
     return canvas.toBuffer('image/png');
 }

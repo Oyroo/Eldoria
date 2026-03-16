@@ -91,51 +91,47 @@ function buildConfigHomePanel(guildIconURL = null) {
 function buildWelcomePanel(guildIconURL = null, errorMsg = null) {
     const welcomeRef = config.welcomeChannelId ? `<#${config.welcomeChannelId}>` : '*Non défini*';
     const leaveRef   = config.leaveChannelId   ? `<#${config.leaveChannelId}>`   : '*Non défini*';
-    const rulesRef   = config.rulesChannelId   ? `<#${config.rulesChannelId}>`   : '*Non défini*';
 
     const container = new ContainerBuilder().setAccentColor(ACCENT);
 
     if (errorMsg) {
         container
-            .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                `> ❌  **Erreur** — ${errorMsg}`
-            ))
+            .addTextDisplayComponents(new TextDisplayBuilder().setContent(`> ❌  **Erreur** — ${errorMsg}`))
             .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2));
     }
+
+    const headerText =
+        `# 👋  Arrivées & départs
+` +
+        `-# Configure les salons utilisés pour les messages de bienvenue et de départ.`;
 
     if (guildIconURL) {
         container.addSectionComponents(
             new SectionBuilder()
-                .addTextDisplayComponents(
-                    new TextDisplayBuilder().setContent(
-                        `# 👋  Arrivées & départs
-` +
-                        `-# Configure les salons utilisés pour les messages de bienvenue et de départ.`
-                    )
-                )
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(headerText))
                 .setThumbnailAccessory(new ThumbnailBuilder().setURL(guildIconURL))
         );
     } else {
-        container.addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
-                `# 👋  Arrivées & départs
-` +
-                `-# Configure les salons utilisés pour les messages de bienvenue et de départ.`
-            )
-        );
+        container.addTextDisplayComponents(new TextDisplayBuilder().setContent(headerText));
     }
+
+    const statusText =
+        `### Salons configurés
+` +
+        `• 🎉 Bienvenue : ${welcomeRef}
+` +
+        `• 👋 Départs : ${leaveRef}
+
+` +
+        `### Textes (aperçu)
+` +
+        `• Bienvenue : ${config.welcomeText}
+` +
+        `• Départ : ${config.leaveText}`;
 
     container
         .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2))
-        .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-            `### Salons configurés
-` +
-            `• 🎉 Bienvenue : ${welcomeRef}
-` +
-            `• 👋 Départs : ${leaveRef}
-` +
-            `• 📜 Règles : ${rulesRef}`
-        ))
+        .addTextDisplayComponents(new TextDisplayBuilder().setContent(statusText))
         .addActionRowComponents(
             new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
@@ -149,16 +145,22 @@ function buildWelcomePanel(guildIconURL = null, errorMsg = null) {
                     .setEmoji('👋')
                     .setStyle(ButtonStyle.Secondary),
                 new ButtonBuilder()
-                    .setCustomId('cfg_welcome_set_rules')
-                    .setLabel('Salon règles')
-                    .setEmoji('📜')
+                    .setCustomId('cfg_welcome_edit:welcome')
+                    .setLabel('Modifier texte bienvenue')
+                    .setEmoji('✏️')
+                    .setStyle(ButtonStyle.Secondary),
+                new ButtonBuilder()
+                    .setCustomId('cfg_welcome_edit:leave')
+                    .setLabel('Modifier texte départ')
+                    .setEmoji('✏️')
                     .setStyle(ButtonStyle.Secondary),
             )
         );
 
     const actionRow = new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId('cfg_back_home').setLabel('Accueil').setEmoji('🏡').setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder().setCustomId('cfg_back').setLabel('Tickets').setEmoji('🎟️').setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId('cfg_welcome_preview:welcome').setLabel('Aperçu bienvenue').setEmoji('👀').setStyle(ButtonStyle.Primary),
+        new ButtonBuilder().setCustomId('cfg_welcome_preview:leave').setLabel('Aperçu départ').setEmoji('👀').setStyle(ButtonStyle.Primary),
     );
 
     return [container, actionRow];
@@ -272,6 +274,15 @@ function buildMainPanel(guildIconURL = null) {
                     .setLabel('Nouvel embed')
                     .setEmoji('➕')
                     .setStyle(ButtonStyle.Success),
+            )
+        )
+        .addActionRowComponents(
+            new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                    .setCustomId('cfg_back_home')
+                    .setLabel('Accueil')
+                    .setEmoji('🏡')
+                    .setStyle(ButtonStyle.Secondary),
             )
         );
 
@@ -429,12 +440,6 @@ function buildAwaitingPanel(type, catKey) {
             title: 'Salon de départ',
             what:  'Envoie le **#salon** ou son **ID**',
             hint:  'Ce salon recevra les messages de départ.',
-        },
-        set_rules: {
-            emoji: '📜',
-            title: 'Salon des règles',
-            what:  'Envoie le **#salon** ou son **ID**',
-            hint:  'Ce salon sera utilisé pour le bouton “Voir les règles”.',
         },
     };
     const info = infos[type] ?? { emoji: '⌨️', title: 'Saisie', what: 'Envoie ta réponse.', hint: '' };

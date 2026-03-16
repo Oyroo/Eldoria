@@ -22,7 +22,11 @@ module.exports = {
             || null;
         if (!channel) return;
 
-        const welcomeImage = await createWelcomeImage(member, 'welcome').catch(() => null);
+        const format = (template) => template
+            .replace(/\{user\}/g, `${member}`)
+            .replace(/\{guild\}/g, member.guild.name);
+
+        const welcomeImage = await createWelcomeImage(member, 'welcome', { message: format(config.welcomeText ?? '') }).catch(() => null);
         const attachment = welcomeImage
             ? new AttachmentBuilder(welcomeImage, { name: 'welcome.png' })
             : null;
@@ -30,7 +34,7 @@ module.exports = {
         const embed = new EmbedBuilder()
             .setColor(0x5DB3FF)
             .setTitle('🎉 Nouveau membre !')
-            .setDescription(`Salut ${member}, bienvenue sur **${member.guild.name}** !`)
+            .setDescription(format(config.welcomeText ?? `Salut ${member}, bienvenue sur **${member.guild.name}** !`))
             .setTimestamp();
 
         if (attachment) {
@@ -38,20 +42,6 @@ module.exports = {
         }
 
         const components = [];
-        const rulesChannelId = config.rulesChannelId || member.guild.rulesChannelId;
-        if (rulesChannelId) {
-            const rulesChannel = await resolveChannel(member.guild, rulesChannelId);
-            if (rulesChannel) {
-                components.push(
-                    new ActionRowBuilder().addComponents(
-                        new ButtonBuilder()
-                            .setLabel('Voir les règles')
-                            .setStyle(ButtonStyle.Link)
-                            .setURL(`https://discord.com/channels/${member.guild.id}/${rulesChannel.id}`)
-                    )
-                );
-            }
-        }
 
         await channel.send({
             embeds: [embed],

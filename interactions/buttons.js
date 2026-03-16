@@ -1,7 +1,7 @@
 const {
     MessageFlags, ChannelType, PermissionFlagsBits,
     ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder,
-    EmbedBuilder, ButtonBuilder, ButtonStyle,
+    EmbedBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle,
 } = require('discord.js');
 const fs   = require('fs');
 const path = require('path');
@@ -21,11 +21,39 @@ const {
     buildTicketEmbed,
     buildTicketOpenRow,
 } = require('../utils/builders');
+const { createWelcomeImage } = require('../utils/welcomeImage');
 
 // ─── Helper : récupère l'icône du serveur ─────────────────────────────────────
 
 function getGuildIcon(guild) {
     return guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
+}
+
+function formatWelcomeTemplate(template, member, guild) {
+    return template
+        .replace(/\{user\}/g, member.user.tag)
+        .replace(/\{guild\}/g, guild.name);
+}
+
+async function generateWelcomePreview(interaction, type = 'welcome') {
+    const member = interaction.guild?.members?.me ?? interaction.member ?? interaction.user;
+    const text = type === 'welcome'
+        ? formatWelcomeTemplate(config.welcomeText ?? '', member, interaction.guild)
+        : formatWelcomeTemplate(config.leaveText ?? '', member, interaction.guild);
+
+    const buffer = await createWelcomeImage(member, type, { message: text }).catch(() => null);
+    const embed = new EmbedBuilder()
+        .setTitle(type === 'welcome' ? 'Aperçu : message de bienvenue' : 'Aperçu : message de départ')
+        .setDescription('Voici un aperçu de l’image générée. Utilise les boutons ci-dessous pour modifier le texte et rafraîchir l’aperçu.')
+        .setColor(type === 'welcome' ? 0x5DB3FF : 0xFF6B6B);
+
+    const files = [];
+    if (buffer) {
+        files.push(new AttachmentBuilder(buffer, { name: 'preview.png' }));
+        embed.setImage('attachment://preview.png');
+    }
+
+    return { embed, files };
 }
 
 // ─── Boutons de contrôle dans le salon ticket ─────────────────────────────────
@@ -91,17 +119,39 @@ async function handleButton(interaction) {
         return interaction.update({ components: [container, actionRow], flags: MessageFlags.IsComponentsV2 });
     }
 
-    if (id === 'cfg_welcome_set_rules') {
-        pendingInputs[interaction.user.id] = {
-            type:   'set_rules',
-            catKey: 'welcome',
-            token:  interaction.token,
-            appId:  interaction.client.application.id,
-            guildId: interaction.guildId,
-        };
-        const [container, actionRow] = buildAwaitingPanel('set_rules', 'welcome');
-        return interaction.update({ components: [container, actionRow], flags: MessageFlags.IsComponentsV2 });
+    if (id.startsWith('cfg_welcome_preview:')) {
+        const type = id.split(':')[1] === 'leave' ? 'leave' : 'welcome';
+        const [container, actionRow] = buildWelcomePanel(icon);
+
+        const { embed, files } = await generateWelcomePreview(interaction, type);
+        return interaction.update({
+            components: [container, actionRow],
+            embeds:     [embed],
+            files,
+            flags:      MessageFlags.IsComponentsV2,
+        });
     }
+
+    if (id.startsWith('cfg_welcome_edit:')) {
+        const type = id.split(':')[1];
+        const modal = new ModalBuilder()
+            .setCustomId(`cfg_modal_welcome:${type}`)
+            .setTitle(type === 'leave' ? 'Modifier le message de départ' : 'Modifier le message de bienvenue');
+
+        modal.addComponents(
+            new ActionRowBuilder().addComponents(
+                new TextInputBuilder()
+                    .setCustomId('message')
+                    .setLabel('Texte (utilise {user} et {guild})')
+                    .setStyle(TextInputStyle.Paragraph)
+                    .setRequired(true)
+                    .setValue(type === 'leave' ? config.leaveText : config.welcomeText)
+            )
+        );
+
+        return interaction.showModal(modal);
+    }
+
 
     if (id.startsWith('cfg_open:')) {
         const catKey = id.split(':')[1];

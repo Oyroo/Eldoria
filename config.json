@@ -2,5 +2,6 @@
     "guildId": "1479878538453844061",
     "welcomeChannelId": "",
     "leaveChannelId": "",
-    "rulesChannelId": ""
+    "welcomeText": "Sur {guild}, tu peux explorer et t'amuser !",
+    "leaveText": "Tu vas nous manquer. Reviens quand tu veux !"
 }
