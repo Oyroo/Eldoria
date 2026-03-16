@@ -11,9 +11,6 @@ const MODULES_RP = [
     { value: 'meteo',      label: 'Météo',              emoji: '🌦️', available: false },
     { value: 'journal',    label: 'Journal',            emoji: '📰', available: false },
     { value: 'evenements', label: 'Événements RP',      emoji: '🎭', available: false },
-    { value: 'lore',       label: 'Lore & Encyclopédie',emoji: '📖', available: false },
-    { value: 'rumeurs',    label: 'Rumeurs',            emoji: '🗣️', available: false },
-    { value: 'economies',  label: 'Économie RP',        emoji: '💰', available: false },
 ];
 
 function sep()     { return new SeparatorBuilder().setDivider(true).setSpacing(2); }
@@ -108,24 +105,6 @@ function unavailablePanel(module, guild) {
             `- Publier des annonces automatiques avant le début`,
             `- Gérer les inscriptions des joueurs`,
             `- Archiver les événements passés`,
-        ],
-        lore: [
-            `- Constituer une encyclopédie du monde d'Eldoria`,
-            `- Organiser les entrées par catégorie (lieux, factions, magie…)`,
-            `- Mettre à jour le lore au fil des événements`,
-            `- Rendre le lore consultable par tous les joueurs`,
-        ],
-        rumeurs: [
-            `- Publier des rumeurs anonymes ou attribuées dans le monde`,
-            `- Gérer la propagation des informations in-game`,
-            `- Programmer des révélations et rebondissements`,
-            `- Lier les rumeurs aux événements en cours`,
-        ],
-        economies: [
-            `- Gérer une monnaie RP propre au serveur`,
-            `- Créer des commerces et marchés in-universe`,
-            `- Attribuer des revenus selon les rôles et métiers RP`,
-            `- Suivre les transactions et l'économie globale du monde`,
         ],
     };
 
