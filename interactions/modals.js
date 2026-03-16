@@ -35,7 +35,7 @@ async function handleModal(interaction) {
     if (id.startsWith('modal_edit:')) {
         const key = id.split(':')[1];
         const e   = config.ticketCategories[key];
-        if (!e) return interaction.update({ components: [mainPanel(ic)], flags: Flags.CV2 });
+        if (!e) return interaction.update({ components: mainPanel(ic), flags: Flags.CV2 });
 
         e.title       = interaction.fields.getTextInputValue('title');
         e.description = interaction.fields.getTextInputValue('description');
@@ -51,7 +51,7 @@ async function handleModal(interaction) {
     if (id.startsWith('modal_color:')) {
         const key = id.split(':')[1];
         const e   = config.ticketCategories[key];
-        if (!e) return interaction.update({ components: [mainPanel(ic)], flags: Flags.CV2 });
+        if (!e) return interaction.update({ components: mainPanel(ic), flags: Flags.CV2 });
 
         e.color = hexToInt(interaction.fields.getTextInputValue('color').trim());
         saveConfig();

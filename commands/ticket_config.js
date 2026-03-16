@@ -11,7 +11,7 @@ module.exports = {
     async execute(interaction) {
         const icon = interaction.guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
         await interaction.reply({
-            components: [mainPanel(icon)],
+            components: mainPanel(icon),
             flags: Flags.CV2_Ephemeral,
         });
     },

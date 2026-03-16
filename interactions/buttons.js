@@ -23,13 +23,13 @@ async function handleButton(interaction) {
     // ─── Navigation ───────────────────────────────────────────────────────────
 
     if (id === 'cfg_back') {
-        return interaction.update({ components: [mainPanel(ic)], flags: Flags.CV2 });
+        return interaction.update({ components: mainPanel(ic), flags: Flags.CV2 });
     }
 
     if (id.startsWith('cfg_open:')) {
         const key = id.split(':')[1];
         if (!config.ticketCategories[key])
-            return interaction.update({ components: [mainPanel(ic)], flags: Flags.CV2 });
+            return interaction.update({ components: mainPanel(ic), flags: Flags.CV2 });
         const [c, row] = categoryPanel(key, null, ic);
         return interaction.update({ components: [c, row], flags: Flags.CV2 });
     }
@@ -59,7 +59,7 @@ async function handleButton(interaction) {
     if (id.startsWith('cfg_edit:')) {
         const key = id.split(':')[1];
         const e   = config.ticketCategories[key];
-        if (!e) return interaction.update({ components: [mainPanel(ic)], flags: Flags.CV2 });
+        if (!e) return interaction.update({ components: mainPanel(ic), flags: Flags.CV2 });
 
         const modal = new ModalBuilder().setCustomId(`modal_edit:${key}`).setTitle(`Modifier — ${e.label}`);
         modal.addComponents(
@@ -73,7 +73,7 @@ async function handleButton(interaction) {
     if (id.startsWith('cfg_color:')) {
         const key = id.split(':')[1];
         const e   = config.ticketCategories[key];
-        if (!e) return interaction.update({ components: [mainPanel(ic)], flags: Flags.CV2 });
+        if (!e) return interaction.update({ components: mainPanel(ic), flags: Flags.CV2 });
 
         const modal = new ModalBuilder().setCustomId(`modal_color:${key}`).setTitle(`Couleur — ${e.label}`);
         modal.addComponents(
@@ -116,7 +116,7 @@ async function handleButton(interaction) {
             const [c, row] = categoryPanel(key, null, ic);
             return interaction.update({ components: [c, row], flags: Flags.CV2 });
         }
-        return interaction.update({ components: [mainPanel(ic)], flags: Flags.CV2 });
+        return interaction.update({ components: mainPanel(ic), flags: Flags.CV2 });
     }
 
     // ─── Page embed — hors container ─────────────────────────────────────────
@@ -124,7 +124,7 @@ async function handleButton(interaction) {
     if (id.startsWith('cfg_save:')) {
         const key = id.split(':')[1];
         if (!config.ticketCategories[key])
-            return interaction.update({ components: [mainPanel(ic)], flags: Flags.CV2 });
+            return interaction.update({ components: mainPanel(ic), flags: Flags.CV2 });
 
         saveConfig();
 
@@ -153,7 +153,7 @@ async function handleButton(interaction) {
     if (id.startsWith('cfg_delete_ask:')) {
         const key = id.split(':')[1];
         if (!config.ticketCategories[key])
-            return interaction.update({ components: [mainPanel(ic)], flags: Flags.CV2 });
+            return interaction.update({ components: mainPanel(ic), flags: Flags.CV2 });
         const [c, row] = deletePanel(key);
         return interaction.update({ components: [c, row], flags: Flags.CV2 });
     }
@@ -162,7 +162,7 @@ async function handleButton(interaction) {
         const key = id.split(':')[1];
         delete config.ticketCategories[key];
         saveConfig();
-        return interaction.update({ components: [mainPanel(ic)], flags: Flags.CV2 });
+        return interaction.update({ components: mainPanel(ic), flags: Flags.CV2 });
     }
 
     // ─── Tickets ──────────────────────────────────────────────────────────────

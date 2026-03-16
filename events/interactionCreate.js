@@ -39,7 +39,7 @@ module.exports = {
                     const homeBtn = new ActionRowBuilder().addComponents(
                         new ButtonBuilder().setCustomId('config_home').setLabel('Accueil').setEmoji('🏡').setStyle(ButtonStyle.Secondary)
                     );
-                    return interaction.update({ components: [mainPanel(icon), homeBtn], flags: Flags.CV2 });
+                    return interaction.update({ components: mainPanel(icon), flags: Flags.CV2 });
                 }
 
                 if (interaction.customId === 'cfg_back_to_config') {

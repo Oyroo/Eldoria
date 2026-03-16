@@ -95,10 +95,15 @@ function mainPanel(iconURL = null) {
     c.addSeparatorComponents(sep())
      .addActionRowComponents(new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId('cfg_create')
-            .setLabel('Nouvel embed').setEmoji('➕').setStyle(ButtonStyle.Success)
+            .setLabel('Nouvel embed').setEmoji('➕').setStyle(ButtonStyle.Success),
      ));
 
-    return c;
+    const outerRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId('cfg_back_to_config')
+            .setLabel('Retour').setEmoji('↩️').setStyle(ButtonStyle.Secondary),
+    );
+
+    return [c, outerRow];
 }
 
 // ─── Page embed ───────────────────────────────────────────────────────────────
