@@ -194,7 +194,7 @@ async function handleButtonWelcome(interaction) {
 
     // Aperçu — image dans le container via MediaGallery + attachment://
     if (id === 'welcome_preview') {
-        await interaction.deferReply({ flags: EPHEMERAL });
+        await interaction.deferReply({ flags: CV2_EPHEMERAL });
         try {
             const buffer    = await generateWelcomeBanner(interaction.member);
             const customMsg = config.welcome?.message
