@@ -11,6 +11,7 @@ module.exports = {
 
         const p = pending[msg.author.id];
         if (!p || msg.guildId !== p.guildId) return;
+        if (p.type?.startsWith('meteo_')) return; // géré par messageCreate_rp.js
 
         try { await msg.delete(); } catch {}
 

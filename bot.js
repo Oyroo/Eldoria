@@ -29,7 +29,7 @@ if (fs.existsSync(evtDir)) {
     }
 }
 
-client.once('ready', () => {
+client.once('clientReady', () => {
     const { startScheduler } = require('./utils/meteo');
     startScheduler(client);
 });
