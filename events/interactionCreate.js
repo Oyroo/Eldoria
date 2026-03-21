@@ -62,6 +62,12 @@ module.exports = {
                     await handleButtonRp(interaction);
                     return;
                 }
+
+                if (interaction.customId.startsWith('welcome_')) {
+                    const { handleButtonWelcome } = require('../interactions/buttons_welcome');
+                    await handleButtonWelcome(interaction);
+                    return;
+                }
                 const { handleButton } = require('../interactions/buttons');
                 await handleButton(interaction);
                 return;
@@ -71,6 +77,12 @@ module.exports = {
                 if (interaction.customId.startsWith('meteo_')) {
                     const { handleModalRp } = require('../interactions/buttons_rp');
                     await handleModalRp(interaction);
+                    return;
+                }
+
+                if (interaction.customId.startsWith('welcome_')) {
+                    const { handleModalWelcome } = require('../interactions/buttons_welcome');
+                    await handleModalWelcome(interaction);
                     return;
                 }
                 const { handleModal } = require('../interactions/modals');

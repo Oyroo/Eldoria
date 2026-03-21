@@ -8,14 +8,14 @@ const {
 const Flags = require('./flags');
 
 const MODULES = [
-    { value: 'tickets',    label: 'Tickets',            emoji: '🎫', available: true  },
-    { value: 'moderation', label: 'Modération',         emoji: '🔨', available: false },
-    { value: 'logs',       label: 'Logs',               emoji: '🗃️', available: false },
-    { value: 'welcome',    label: 'Arrivées & départs', emoji: '👋', available: false },
-    { value: 'autorole',   label: 'Rôles automatiques', emoji: '🏷️', available: false },
-    { value: 'levels',     label: 'Niveaux',            emoji: '📈', available: false },
-    { value: 'rolereact',  label: 'Rôles-Réactions',   emoji: '🔘', available: false },
-    { value: 'report',     label: 'Signalements',       emoji: '🚨', available: false },
+    { value: 'tickets',    label: 'Tickets',            emoji: '🎟️', available: true  },
+    { value: 'moderation', label: 'Modération',         emoji: '🛡️', available: false },
+    { value: 'logs',       label: 'Logs',               emoji: '📜', available: false },
+    { value: 'welcome',    label: 'Arrivées & départs', emoji: '🚪', available: true  },
+    { value: 'autorole',   label: 'Rôles automatiques', emoji: '🎭', available: false },
+    { value: 'levels',     label: 'Niveaux',            emoji: '⭐', available: false },
+    { value: 'rolereact',  label: 'Rôles-Réactions',   emoji: '🏅', available: false },
+    { value: 'report',     label: 'Signalements',       emoji: '🚩', available: false },
 ];
 
 function sep()      { return new SeparatorBuilder().setDivider(true).setSpacing(2); }
@@ -81,14 +81,14 @@ function homePanel(guild) {
      .addSeparatorComponents(sep())
      .addTextDisplayComponents(new TextDisplayBuilder().setContent(
         `### État des modules\n` +
-        `🎫  **Tickets** · ${totalEmbeds} embed${totalEmbeds !== 1 ? 's' : ''}, ${openTickets} ticket${openTickets !== 1 ? 's' : ''} ouverts\n` +
-        `🔨  **Modération** · *Bientôt disponible*\n` +
-        `🗃️  **Logs** · *Bientôt disponible*\n` +
-        `👋  **Arrivées & départs** · *Bientôt disponible*\n` +
-        `📈  **Niveaux** · *Bientôt disponible*\n` +
-        `🏷️  **Rôles automatiques** · *Bientôt disponible*\n` +
-        `🔘  **Rôles-Réactions** · *Bientôt disponible*\n` +
-        `🚨  **Signalements** · *Bientôt disponible*`
+        `🎟️  **Tickets** · ${totalEmbeds} embed${totalEmbeds !== 1 ? 's' : ''}, ${openTickets} ticket${openTickets !== 1 ? 's' : ''} ouverts\n` +
+        `🛡️  **Modération** · *Bientôt disponible*\n` +
+        `📜  **Logs** · *Bientôt disponible*\n` +
+        `🚪  **Arrivées & départs** · ${welcomeLine}\n` +
+        `⭐  **Niveaux** · *Bientôt disponible*\n` +
+        `🎭  **Rôles automatiques** · *Bientôt disponible*\n` +
+        `🏅  **Rôles-Réactions** · *Bientôt disponible*\n` +
+        `🚩  **Signalements** · *Bientôt disponible*`
      ))
      .addSeparatorComponents(sep())
      .addActionRowComponents(linksRow());
@@ -97,6 +97,56 @@ function homePanel(guild) {
         components: [c],
         flags: Flags.CV2_Ephemeral,
     };
+}
+
+
+// ─── Arrivées & départs ───────────────────────────────────────────────────────
+
+function welcomePanel(guild) {
+    const icon = guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
+    const wc   = config.welcome ?? {};
+    const active      = wc.active    ?? false;
+    const channelStr  = wc.channelId ? `<#${wc.channelId}>` : '*Non défini*';
+    const roleStr     = wc.roleId    ? `<@&${wc.roleId}>`   : '*Aucun*';
+    const msgStr      = wc.message   ? `\`${wc.message.slice(0, 60)}${wc.message.length > 60 ? '…' : ''}\`` : '*Aucun*';
+    const statusStr   = active ? '🟢  **Actif**' : '🔴  **Inactif**';
+
+    const c = new ContainerBuilder().setAccentColor(0xd4a853);
+    const section = new SectionBuilder().addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+            `# 🚪  Arrivées & départs\n` +
+            `-# Message de bienvenue automatique avec banner personnalisé.`
+        )
+    );
+    if (icon) section.setThumbnailAccessory(new ThumbnailBuilder().setURL(icon));
+    c.addSectionComponents(section);
+
+    c.addSeparatorComponents(thinSep())
+     .addActionRowComponents(selectRow('welcome'))
+     .addSeparatorComponents(sep())
+     .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+        `### Configuration\n` +
+        `${statusStr}\n` +
+        `📢  **Salon de bienvenue** · ${channelStr}\n` +
+        `🎭  **Rôle automatique** · ${roleStr}\n` +
+        `💬  **Message personnalisé** · ${msgStr}`
+     ))
+     .addActionRowComponents(
+        new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId('welcome_toggle').setLabel(active ? 'Désactiver' : 'Activer').setEmoji(active ? '🔴' : '🟢').setStyle(active ? ButtonStyle.Danger : ButtonStyle.Success),
+            new ButtonBuilder().setCustomId('welcome_setchannel').setLabel('Salon').setEmoji('📢').setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('welcome_setrole').setLabel('Rôle auto').setEmoji('🎭').setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('welcome_setmessage').setLabel('Message').setEmoji('💬').setStyle(ButtonStyle.Secondary),
+        )
+     )
+     .addSeparatorComponents(sep())
+     .addActionRowComponents(
+        new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId('welcome_preview').setLabel('Aperçu').setEmoji('👁️').setStyle(ButtonStyle.Secondary),
+        )
+     );
+
+    return { components: [c], flags: Flags.CV2_Ephemeral };
 }
 
 // ─── Tickets ──────────────────────────────────────────────────────────────────
@@ -210,6 +260,7 @@ function unavailablePanel(module, guild) {
 
 function buildConfigMessage(module = 'home', guild = null) {
     if (!module || module === 'home') return homePanel(guild);
+    if (module === 'welcome')         return welcomePanel(guild);
     if (module === 'tickets')         return ticketsPanel(guild);
     return unavailablePanel(module, guild);
 }
