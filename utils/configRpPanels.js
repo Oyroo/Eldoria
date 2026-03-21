@@ -169,7 +169,7 @@ function meteoPanel(guild) {
     function sep()     { return new SeparatorBuilder().setDivider(true).setSpacing(2); }
     function thinSep() { return new SeparatorBuilder().setDivider(false).setSpacing(1); }
 
-    const c = new ContainerBuilder().setAccentColor(0x8b5e3c);
+    const c = new ContainerBuilder().setAccentColor(0xd4a853);
 
     const section = new SectionBuilder().addTextDisplayComponents(
         new TextDisplayBuilder().setContent(

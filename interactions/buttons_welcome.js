@@ -191,16 +191,19 @@ async function handleButtonWelcome(interaction) {
         });
     }
 
-    // Aperçu → image + message CV2 séparés
+    // Aperçu — image seule (fichiers et CV2 ne peuvent pas être dans le même message)
     if (id === 'welcome_preview') {
         await interaction.deferReply({ flags: EPHEMERAL });
         try {
             const buffer = await generateWelcomeBanner(interaction.member);
 
+            // 1. Envoyer l'image
             await interaction.editReply({
-                files: [{ attachment: buffer, name: 'welcome.png' }],
+                content: `-# Aperçu du message de bienvenue`,
+                files:   [{ attachment: buffer, name: 'welcome.png' }],
             });
 
+            // 2. Envoyer le message CV2 en followUp séparé
             const customMsg = config.welcome?.message
                 ?.replace(/\{user\}/g,   `<@${interaction.user.id}>`)
                 ?.replace(/\{server\}/g, interaction.guild.name);
@@ -222,10 +225,7 @@ async function handleButtonWelcome(interaction) {
                 `-# Prends le temps de lire les règles avant de te lancer dans l'aventure.`
              ));
 
-            return interaction.followUp({
-                components: [c],
-                flags:      CV2_EPHEMERAL,
-            });
+            return interaction.followUp({ components: [c], flags: CV2_EPHEMERAL });
 
         } catch (err) {
             console.error('welcome_preview:', err.message);
