@@ -1,4 +1,4 @@
-const { Events, ContainerBuilder, TextDisplayBuilder, SeparatorBuilder } = require('discord.js');
+const { Events, ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, MediaGalleryBuilder, MediaGalleryItemBuilder } = require('discord.js');
 const { config }                = require('../utils/config');
 const { generateWelcomeBanner } = require('../utils/welcomeImage');
 
@@ -30,9 +30,14 @@ module.exports = {
                 ?.replace(/\{user\}/g,   `<@${member.id}>`)
                 ?.replace(/\{server\}/g, member.guild.name);
 
-            // Container CV2
+            // Container CV2 avec image intégrée
             const c = new ContainerBuilder()
                 .setAccentColor(0xd4a853)
+                .addMediaGalleryComponents(
+                    new MediaGalleryBuilder().addItems(
+                        new MediaGalleryItemBuilder().setURL('attachment://welcome.png')
+                    )
+                )
                 .addTextDisplayComponents(
                     new TextDisplayBuilder().setContent(
                         `# Bienvenue, <@${member.id}> ! 🎉\n` +

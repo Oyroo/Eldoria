@@ -1,6 +1,7 @@
 const {
     ModalBuilder, ActionRowBuilder, TextInputBuilder, TextInputStyle,
     ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, ButtonBuilder, ButtonStyle,
+    MediaGalleryBuilder, MediaGalleryItemBuilder,
 } = require('discord.js');
 
 const { config, saveConfig }    = require('../utils/config');
@@ -191,25 +192,23 @@ async function handleButtonWelcome(interaction) {
         });
     }
 
-    // Aperçu — image seule (fichiers et CV2 ne peuvent pas être dans le même message)
+    // Aperçu — image dans le container via MediaGallery + attachment://
     if (id === 'welcome_preview') {
         await interaction.deferReply({ flags: EPHEMERAL });
         try {
-            const buffer = await generateWelcomeBanner(interaction.member);
-
-            // 1. Envoyer l'image
-            await interaction.editReply({
-                content: `-# Aperçu du message de bienvenue`,
-                files:   [{ attachment: buffer, name: 'welcome.png' }],
-            });
-
-            // 2. Envoyer le message CV2 en followUp séparé
+            const buffer    = await generateWelcomeBanner(interaction.member);
             const customMsg = config.welcome?.message
                 ?.replace(/\{user\}/g,   `<@${interaction.user.id}>`)
                 ?.replace(/\{server\}/g, interaction.guild.name);
 
             const c = new ContainerBuilder()
                 .setAccentColor(0xd4a853)
+                // Image dans le container via référence à l'attachment
+                .addMediaGalleryComponents(
+                    new MediaGalleryBuilder().addItems(
+                        new MediaGalleryItemBuilder().setURL('attachment://welcome.png')
+                    )
+                )
                 .addTextDisplayComponents(new TextDisplayBuilder().setContent(
                     `# Bienvenue, <@${interaction.user.id}> ! 🎉\n` +
                     `-# Tu es le **${interaction.guild.memberCount}**ème membre à rejoindre ${interaction.guild.name}.`
@@ -225,7 +224,10 @@ async function handleButtonWelcome(interaction) {
                 `-# Prends le temps de lire les règles avant de te lancer dans l'aventure.`
              ));
 
-            return interaction.followUp({ components: [c], flags: CV2_EPHEMERAL });
+            return interaction.editReply({
+                files:      [{ attachment: buffer, name: 'welcome.png' }],
+                components: [c],
+            });
 
         } catch (err) {
             console.error('welcome_preview:', err.message);
