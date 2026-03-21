@@ -152,7 +152,7 @@ function welcomePanel(guild) {
         )
      );
 
-    return { components: [c], flags: Flags.CV2_Ephemeral };
+    return { components: [c, homeButton()], flags: Flags.CV2_Ephemeral };
 }
 
 // ─── Tickets ──────────────────────────────────────────────────────────────────

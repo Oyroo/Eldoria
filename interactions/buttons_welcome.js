@@ -14,10 +14,12 @@ async function handleButtonWelcome(interaction) {
 
     // ── Activer / Désactiver ──────────────────────────────────────────────────
     if (id === 'welcome_toggle') {
+        await interaction.deferUpdate();
         if (!config.welcome) config.welcome = {};
         config.welcome.active = !config.welcome.active;
         saveConfig();
-        return interaction.update(buildConfigMessage('welcome', interaction.guild));
+        const msg = buildConfigMessage('welcome', interaction.guild);
+        return interaction.editReply({ components: msg.components });
     }
 
     // ── Salon → saisie par message ────────────────────────────────────────────
@@ -68,8 +70,10 @@ async function handleButtonWelcome(interaction) {
 
     // ── Annuler saisie ────────────────────────────────────────────────────────
     if (id === 'welcome_cancel') {
+        await interaction.deferUpdate();
         delete pending[interaction.user.id];
-        return interaction.update(buildConfigMessage('welcome', interaction.guild));
+        const msg = buildConfigMessage('welcome', interaction.guild);
+        return interaction.editReply({ components: msg.components });
     }
 
     // ── Aperçu ────────────────────────────────────────────────────────────────
@@ -111,11 +115,13 @@ async function handleButtonWelcome(interaction) {
 
 async function handleModalWelcome(interaction) {
     if (interaction.customId === 'welcome_modal_message') {
+        await interaction.deferUpdate();
         const msg = interaction.fields.getTextInputValue('message').trim();
         if (!config.welcome) config.welcome = {};
         config.welcome.message = msg || null;
         saveConfig();
-        return interaction.update(buildConfigMessage('welcome', interaction.guild));
+        const res = buildConfigMessage('welcome', interaction.guild);
+        return interaction.editReply({ components: res.components });
     }
 }
 

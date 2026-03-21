@@ -34,4 +34,9 @@ client.once('clientReady', () => {
     startScheduler(client);
 });
 
+// Empêche le bot de crasher sur les erreurs non gérées
+process.on('unhandledRejection', err => {
+    console.error('Unhandled rejection:', err?.message ?? err);
+});
+
 client.login(process.env.TOKEN);
