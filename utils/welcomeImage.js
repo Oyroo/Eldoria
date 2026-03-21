@@ -111,11 +111,10 @@ async function generateWelcomeBanner(member) {
     ctx.fillStyle = '#ffffff';
     ctx.fillText('Bienvenue', TX, yBienvenue);
 
-    // Masque la pointe du v avec un rectangle fond
+    // Masque la pointe du v avec clearRect (transparent)
     const wBien = ctx.measureText('Bien').width;
     const wV    = ctx.measureText('v').width;
-    ctx.fillStyle = BG;
-    ctx.fillRect(TX + wBien - 1, yBienvenue, wV + 2, 9);
+    ctx.clearRect(TX + wBien - 1, yBienvenue, wV + 2, 9);
 
     // Ligne dégradé fondu (couleur dominante)
     const lg = ctx.createLinearGradient(TX, 0, TX + 400, 0);
