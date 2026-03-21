@@ -8,7 +8,7 @@ const {
 const Flags = require('./flags');
 
 const MODULES_RP = [
-    { value: 'meteo',      label: 'Météo',              emoji: '🌦️', available: false },
+    { value: 'meteo',      label: 'Météo',              emoji: '🌦️', available: true  },
     { value: 'journal',    label: 'Journal',            emoji: '📰', available: false },
     { value: 'evenements', label: 'Événements RP',      emoji: '🎭', available: false },
 ];
@@ -68,7 +68,10 @@ function homePanel(guild) {
         `### Modules RP\n` +
         `🌦️  **Météo** · *Bientôt disponible*\n` +
         `📰  **Journal** · *Bientôt disponible*\n` +
-        `🎭  **Événements RP** · *Bientôt disponible*\n`
+        `🎭  **Événements RP** · *Bientôt disponible*\n` +
+        `📖  **Lore & Encyclopédie** · *Bientôt disponible*\n` +
+        `🗣️  **Rumeurs** · *Bientôt disponible*\n` +
+        `💰  **Économie RP** · *Bientôt disponible*`
      ))
      .addSeparatorComponents(sep())
      .addTextDisplayComponents(new TextDisplayBuilder().setContent(
@@ -132,10 +135,108 @@ function unavailablePanel(module, guild) {
     return { components: [c, homeButton()], flags: Flags.CV2_Ephemeral };
 }
 
+// ─── Panel Météo ─────────────────────────────────────────────────────────────
+
+function meteoPanel(guild) {
+    const { config }   = require('./config');
+    const { METEOS, buildMeteoEmbed, choisirProchaineMeteo } = require('./meteo');
+
+    const icon       = guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
+    const meteoConf  = config.meteo ?? {};
+    const active     = meteoConf.active     ?? false;
+    const channelId  = meteoConf.channelId  ?? null;
+    const heure      = meteoConf.heure      ?? null;
+    const actuelle   = meteoConf.meteoActuelle ?? null;
+    const dernierEnvoi = meteoConf.dernierEnvoi ?? null;
+
+    const statusStr  = active ? '🟢  **Actif**' : '🔴  **Inactif**';
+    const channelStr = channelId ? `<#${channelId}>` : '*Non défini*';
+    const heureStr   = heure ?? '*Non définie*';
+    const meteoStr   = actuelle && METEOS[actuelle]
+        ? `${METEOS[actuelle].emoji}  ${METEOS[actuelle].label}`
+        : '*Aucune météo envoyée*';
+    const dernierStr = dernierEnvoi ?? '*Jamais*';
+
+    const { ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, SectionBuilder,
+            ThumbnailBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+
+    function sep()     { return new SeparatorBuilder().setDivider(true).setSpacing(2); }
+    function thinSep() { return new SeparatorBuilder().setDivider(false).setSpacing(1); }
+
+    const c = new ContainerBuilder().setAccentColor(0x8b5e3c);
+
+    const section = new SectionBuilder().addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+            `# 🌦️  Météo
+` +
+            `-# Bulletin météorologique quotidien automatisé.`
+        )
+    );
+    if (icon) section.setThumbnailAccessory(new ThumbnailBuilder().setURL(icon));
+    c.addSectionComponents(section);
+
+    c.addSeparatorComponents(thinSep())
+     .addActionRowComponents(selectRow('meteo'))
+     .addSeparatorComponents(sep())
+     .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+        `### Configuration
+` +
+        `${statusStr}
+` +
+        `📢  **Salon de publication** · ${channelStr}
+` +
+        `🕐  **Heure d'envoi** · ${heureStr}
+` +
+        `🌤️  **Météo actuelle** · ${meteoStr}
+` +
+        `-# Dernier envoi : ${dernierStr}`
+     ))
+     .addActionRowComponents(
+        new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setCustomId(`meteo_toggle`)
+                .setLabel(active ? 'Désactiver' : 'Activer')
+                .setEmoji(active ? '🔴' : '🟢')
+                .setStyle(active ? ButtonStyle.Danger : ButtonStyle.Success),
+            new ButtonBuilder()
+                .setCustomId('meteo_setchannel')
+                .setLabel('Salon de publication')
+                .setEmoji('📢')
+                .setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder()
+                .setCustomId('meteo_setheure')
+                .setLabel("Heure d'envoi")
+                .setEmoji('🕐')
+                .setStyle(ButtonStyle.Secondary),
+        )
+     )
+     .addSeparatorComponents(sep())
+     .addActionRowComponents(
+        new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setCustomId('meteo_preview')
+                .setLabel('Aperçu du rendu')
+                .setEmoji('👁️')
+                .setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder()
+                .setCustomId('meteo_force')
+                .setLabel('Envoyer maintenant')
+                .setEmoji('📤')
+                .setStyle(ButtonStyle.Primary),
+        )
+     );
+
+    return {
+        components: [c, homeButton()],
+        flags: Flags.CV2_Ephemeral,
+    };
+}
+
 // ─── Dispatcher ──────────────────────────────────────────────────────────────
 
 function buildConfigRpMessage(module = 'home', guild = null) {
     if (!module || module === 'home') return homePanel(guild);
+    if (module === 'meteo')          return meteoPanel(guild);
     return unavailablePanel(module, guild);
 }
 

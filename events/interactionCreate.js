@@ -57,12 +57,22 @@ module.exports = {
                     return interaction.update(buildConfigMessage('tickets', interaction.guild));
                 }
 
+                if (interaction.customId.startsWith('meteo_')) {
+                    const { handleButtonRp } = require('../interactions/buttons_rp');
+                    await handleButtonRp(interaction);
+                    return;
+                }
                 const { handleButton } = require('../interactions/buttons');
                 await handleButton(interaction);
                 return;
             }
 
             if (interaction.isModalSubmit()) {
+                if (interaction.customId.startsWith('meteo_')) {
+                    const { handleModalRp } = require('../interactions/buttons_rp');
+                    await handleModalRp(interaction);
+                    return;
+                }
                 const { handleModal } = require('../interactions/modals');
                 await handleModal(interaction);
                 return;
