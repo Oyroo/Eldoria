@@ -10,8 +10,6 @@ GlobalFonts.registerFromPath(
 
 const W  = 820;
 const H  = 280;
-const BG = '#16181d';
-
 // ─── Couleur dominante de l'avatar ────────────────────────────────────────────
 
 function getDominantColor(img, size = 64) {
@@ -55,23 +53,15 @@ async function generateWelcomeBanner(member) {
     const avatar    = await loadImage(avatarURL);
     const glow      = getDominantColor(avatar);
 
-    // ── Fond ──────────────────────────────────────────────────────────────────
-    ctx.fillStyle = BG;
-    ctx.fillRect(0, 0, W, H);
-
-    const vig = ctx.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, W * 0.8);
-    vig.addColorStop(0, 'transparent');
-    vig.addColorStop(1, '#00000066');
-    ctx.fillStyle = vig;
-    ctx.fillRect(0, 0, W, H);
+    // Fond 100% transparent
 
     // ── Avatar ────────────────────────────────────────────────────────────────
     const AX = 152, AY = H / 2, AR = 88;
 
     // Halo couleur dominante
     const halo = ctx.createRadialGradient(AX, AY, AR * 0.5, AX, AY, AR + 55);
-    halo.addColorStop(0,   glow + '22');
-    halo.addColorStop(0.5, glow + '12');
+    halo.addColorStop(0,   glow + '30');
+    halo.addColorStop(0.5, glow + '18');
     halo.addColorStop(1,   'transparent');
     ctx.fillStyle = halo;
     ctx.beginPath();

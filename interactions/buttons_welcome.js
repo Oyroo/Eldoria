@@ -203,16 +203,14 @@ async function handleButtonWelcome(interaction) {
 
             const c = new ContainerBuilder()
                 .setAccentColor(0xd4a853)
-                // Image dans le container via référence à l'attachment
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                    `# Bienvenue, <@${interaction.user.id}> ! 🎉`
+                ))
                 .addMediaGalleryComponents(
                     new MediaGalleryBuilder().addItems(
                         new MediaGalleryItemBuilder().setURL('attachment://welcome.png')
                     )
-                )
-                .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                    `# Bienvenue, <@${interaction.user.id}> ! 🎉\n` +
-                    `-# Tu es le **${interaction.guild.memberCount}**ème membre à rejoindre ${interaction.guild.name}.`
-                ));
+                );
 
             if (customMsg) {
                 c.addSeparatorComponents(new SeparatorBuilder().setDivider(false).setSpacing(1))
@@ -227,6 +225,7 @@ async function handleButtonWelcome(interaction) {
             return interaction.editReply({
                 files:      [{ attachment: buffer, name: 'welcome.png' }],
                 components: [c],
+                flags:      CV2,
             });
 
         } catch (err) {

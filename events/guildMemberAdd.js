@@ -33,15 +33,14 @@ module.exports = {
             // Container CV2 avec image intégrée
             const c = new ContainerBuilder()
                 .setAccentColor(0xd4a853)
+                .addTextDisplayComponents(
+                    new TextDisplayBuilder().setContent(
+                        `# Bienvenue, <@${member.id}> ! 🎉`
+                    )
+                )
                 .addMediaGalleryComponents(
                     new MediaGalleryBuilder().addItems(
                         new MediaGalleryItemBuilder().setURL('attachment://welcome.png')
-                    )
-                )
-                .addTextDisplayComponents(
-                    new TextDisplayBuilder().setContent(
-                        `# Bienvenue, <@${member.id}> ! 🎉\n` +
-                        `-# Tu es le **${member.guild.memberCount}**${member.guild.memberCount === 1 ? 'er' : 'ème'} membre à rejoindre ${member.guild.name}.`
                     )
                 );
 
