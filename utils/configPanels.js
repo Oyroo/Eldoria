@@ -64,6 +64,11 @@ function homePanel(guild) {
     const totalEmbeds = Object.keys(config.ticketCategories ?? {}).length;
     const openTickets = Object.keys(require('./tickets').get() ?? {}).length;
 
+    const wc          = config.welcome ?? {};
+    const welcomeLine = wc.active && wc.channelId
+        ? `Actif · <#${wc.channelId}>${wc.roleId ? ` · <@&${wc.roleId}>` : ''}`
+        : wc.channelId ? `<#${wc.channelId}> · *Inactif*` : '*Non configuré*';
+
     const c = new ContainerBuilder().setAccentColor(0xd4a853);
 
     const section = new SectionBuilder().addTextDisplayComponents(
