@@ -5,7 +5,9 @@ const {
     StringSelectMenuBuilder, StringSelectMenuOptionBuilder,
 } = require('discord.js');
 
-const Flags = require('./flags');
+const Flags              = require('./flags');
+const { config }         = require('./config');
+const { get: getTickets } = require('./tickets');
 
 const MODULES = [
     { value: 'tickets',    label: 'Tickets',            emoji: '🎟️', available: true  },
@@ -60,9 +62,8 @@ function linksRow() {
 
 function homePanel(guild) {
     const icon = guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
-    const { config } = require('./config');
     const totalEmbeds = Object.keys(config.ticketCategories ?? {}).length;
-    const openTickets = Object.keys(require('./tickets').get() ?? {}).length;
+    const openTickets = Object.keys(getTickets() ?? {}).length;
 
     const wc          = config.welcome ?? {};
     const welcomeLine = wc.active && wc.channelId
@@ -158,7 +159,6 @@ function welcomePanel(guild) {
 
 function ticketsPanel(guild) {
     const icon = guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
-    const { config } = require('./config');
     const cats  = config.ticketCategories ?? {};
     const keys  = Object.keys(cats);
     const total = keys.length;
