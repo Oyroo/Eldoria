@@ -48,6 +48,7 @@ function homeButton() {
 
 function homePanel(guild) {
     const icon = guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
+    const { config } = require('./config');
 
     const c = new ContainerBuilder().setAccentColor(0x8b5e3c);
 
@@ -61,17 +62,22 @@ function homePanel(guild) {
     if (icon) section.setThumbnailAccessory(new ThumbnailBuilder().setURL(icon));
     c.addSectionComponents(section);
 
+    const { METEOS } = require('./meteo');
+    const meteoConf  = config.meteo ?? {};
+    const meteoKey   = meteoConf.meteoActuelle;
+    const meteoM     = METEOS[meteoKey];
+    const meteoLine  = meteoConf.active && meteoM
+        ? `${meteoM.emoji}  **Météo** · ${meteoM.label} — ${meteoM.intensite}${ meteoConf.channelId ? ` · <#${meteoConf.channelId}>` : '' }`
+        : `🌦️  **Météo** · ${ meteoConf.channelId ? `<#${meteoConf.channelId}>` : 'Non configurée' }${ meteoConf.active ? '' : ' · *Inactif*' }`;
+
     c.addSeparatorComponents(thinSep())
      .addActionRowComponents(selectRow(null))
      .addSeparatorComponents(sep())
      .addTextDisplayComponents(new TextDisplayBuilder().setContent(
         `### Modules RP\n` +
-        `🌦️  **Météo** · *Bientôt disponible*\n` +
+        `${meteoLine}\n` +
         `📰  **Journal** · *Bientôt disponible*\n` +
-        `🎭  **Événements RP** · *Bientôt disponible*\n` +
-        `📖  **Lore & Encyclopédie** · *Bientôt disponible*\n` +
-        `🗣️  **Rumeurs** · *Bientôt disponible*\n` +
-        `💰  **Économie RP** · *Bientôt disponible*`
+        `🎭  **Événements RP** · *Bientôt disponible*`
      ))
      .addSeparatorComponents(sep())
      .addTextDisplayComponents(new TextDisplayBuilder().setContent(

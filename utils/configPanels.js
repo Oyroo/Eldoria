@@ -51,7 +51,7 @@ function homeButton() {
 
 function linksRow() {
     return new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setStyle(ButtonStyle.Link).setURL('https://discord.gg/eldoria').setLabel('Support Discord'),
+        new ButtonBuilder().setStyle(ButtonStyle.Link).setURL('https://discord.gg/98CAQCE24V').setLabel('Support Discord'),
         new ButtonBuilder().setStyle(ButtonStyle.Link).setURL('https://github.com/Oyroo/Eldoria').setLabel('Documentation'),
     );
 }

@@ -1,7 +1,8 @@
-const { Events, ChannelType } = require('discord.js');
-const { config, saveConfig }  = require('../utils/config');
-const { pending, patch }      = require('../utils/pending');
+const { Events, ChannelType }  = require('discord.js');
+const { config, saveConfig }   = require('../utils/config');
+const { pending, patch }       = require('../utils/pending');
 const { categoryPanel, ticketEmbed, ticketOpenRow } = require('../utils/builders');
+const { buildConfigRpMessage } = require('../utils/configRpPanels');
 
 module.exports = {
     name: Events.MessageCreate,
@@ -11,10 +12,29 @@ module.exports = {
 
         const p = pending[msg.author.id];
         if (!p || msg.guildId !== p.guildId) return;
-        if (p.type?.startsWith('meteo_')) return; // géré par messageCreate_rp.js
 
         try { await msg.delete(); } catch {}
 
+        // ── Météo ──────────────────────────────────────────────────────────────
+        if (p.type === 'meteo_channel') {
+            if (msg.content.trim().toLowerCase() === 'annuler') {
+                delete pending[msg.author.id];
+                await patch(p.token, p.appId, buildConfigRpMessage('meteo', msg.guild).components);
+                return;
+            }
+            delete pending[msg.author.id];
+            const id = msg.content.trim().replace(/[<#>]/g, '').trim();
+            try {
+                await msg.guild.channels.fetch(id);
+                if (!config.meteo) config.meteo = {};
+                config.meteo.channelId = id;
+                saveConfig();
+            } catch {}
+            await patch(p.token, p.appId, buildConfigRpMessage('meteo', msg.guild).components);
+            return;
+        }
+
+        // ── Tickets ────────────────────────────────────────────────────────────
         const icon = msg.guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
 
         if (msg.content.trim().toLowerCase() === 'annuler') {
@@ -26,14 +46,18 @@ module.exports = {
 
         delete pending[msg.author.id];
 
-        const id  = msg.content.trim().replace(/[<#>]/g, '').trim();
-        let error = null;
+        const id    = msg.content.trim().replace(/[<#>]/g, '').trim();
+        let   error = null;
 
         if (p.type === 'setcat') {
             try {
                 const ch = await msg.guild.channels.fetch(id);
-                if (ch.type !== ChannelType.GuildCategory) error = 'Ce salon n\'est pas une catégorie Discord.';
-                else { config.ticketCategories[p.catKey].categoryId = id; saveConfig(); }
+                if (ch.type !== ChannelType.GuildCategory) {
+                    error = "Ce salon n\'est pas une catégorie Discord.";
+                } else {
+                    config.ticketCategories[p.catKey].categoryId = id;
+                    saveConfig();
+                }
             } catch { error = 'Catégorie Discord introuvable.'; }
 
         } else if (p.type === 'transcript') {
@@ -47,9 +71,10 @@ module.exports = {
             try {
                 const ch = await msg.guild.channels.fetch(id);
                 await ch.send({ embeds: [ticketEmbed(p.catKey)], components: [ticketOpenRow(p.catKey)] });
-            } catch { error = 'Impossible d\'envoyer dans ce salon.'; }
+            } catch { error = "Impossible d\'envoyer dans ce salon."; }
         }
 
+        if (!p.catKey || !config.ticketCategories[p.catKey]) return;
         const [c, row] = categoryPanel(p.catKey, error, icon);
         await patch(p.token, p.appId, [c, row]);
     },

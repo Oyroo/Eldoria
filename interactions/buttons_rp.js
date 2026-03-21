@@ -1,6 +1,6 @@
 const {
     ModalBuilder, ActionRowBuilder, TextInputBuilder, TextInputStyle,
-    MessageFlags,
+    ContainerBuilder, TextDisplayBuilder, SeparatorBuilder,
 } = require('discord.js');
 
 const Flags                      = require('../utils/flags');
@@ -76,10 +76,17 @@ async function handleButtonRp(interaction) {
         const icon     = interaction.guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
         const embed    = buildMeteoEmbed(meteoKey, icon);
 
+        const meteoLabel = METEOS[meteoKey].label;
+        const preview = new ContainerBuilder()
+            .setAccentColor(0x8b5e3c)
+            .addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(`-# Aperçu — **${meteoLabel}**`)
+            )
+            .addSeparatorComponents(new SeparatorBuilder().setDivider(false).setSpacing(1));
+
         return interaction.reply({
-            content:    `-# Aperçu du bulletin météo — **${METEOS[meteoKey].label}**`,
-            components: [embed],
-            flags:      Flags.CV2 | MessageFlags.Ephemeral,
+            components: [preview, embed],
+            flags:      Flags.CV2_Ephemeral,
         });
     }
 
