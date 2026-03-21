@@ -5,8 +5,8 @@ const {
     StringSelectMenuBuilder, StringSelectMenuOptionBuilder,
 } = require('discord.js');
 
-const Flags              = require('./flags');
-const { config }         = require('./config');
+const Flags               = require('./flags');
+const { config }          = require('./config');
 const { get: getTickets } = require('./tickets');
 
 const MODULES = [
@@ -20,8 +20,8 @@ const MODULES = [
     { value: 'report',     label: 'Signalements',       emoji: '🚩', available: false },
 ];
 
-function sep()      { return new SeparatorBuilder().setDivider(true).setSpacing(2); }
-function thinSep()  { return new SeparatorBuilder().setDivider(false).setSpacing(1); }
+function sep()     { return new SeparatorBuilder().setDivider(true).setSpacing(2); }
+function thinSep() { return new SeparatorBuilder().setDivider(false).setSpacing(1); }
 
 function selectRow(current = null) {
     return new ActionRowBuilder().addComponents(
@@ -61,11 +61,11 @@ function linksRow() {
 // ─── Accueil ──────────────────────────────────────────────────────────────────
 
 function homePanel(guild) {
-    const icon = guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
+    const icon        = guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
     const totalEmbeds = Object.keys(config.ticketCategories ?? {}).length;
     const openTickets = Object.keys(getTickets() ?? {}).length;
 
-    const wc          = config.welcome ?? {};
+    const wc = config.welcome ?? {};
     const welcomeLine = wc.active && wc.channelId
         ? `Actif · <#${wc.channelId}>${wc.roleId ? ` · <@&${wc.roleId}>` : ''}`
         : wc.channelId ? `<#${wc.channelId}> · *Inactif*` : '*Non configuré*';
@@ -87,10 +87,10 @@ function homePanel(guild) {
      .addSeparatorComponents(sep())
      .addTextDisplayComponents(new TextDisplayBuilder().setContent(
         `### État des modules\n` +
-        `🎟️  **Tickets** · ${totalEmbeds} embed${totalEmbeds !== 1 ? 's' : ''}, ${openTickets} ticket${openTickets !== 1 ? 's' : ''} ouverts\n` +
+        `🎟️  **Tickets** · ${totalEmbeds} embed${totalEmbeds !== 1 ? 's' : ''}, ${openTickets} ticket${openTickets !== 1 ? 's' : ''} ouvert${openTickets !== 1 ? 's' : ''}\n` +
+        `🚪  **Arrivées & départs** · ${welcomeLine}\n` +
         `🛡️  **Modération** · *Bientôt disponible*\n` +
         `📜  **Logs** · *Bientôt disponible*\n` +
-        `🚪  **Arrivées & départs** · ${welcomeLine}\n` +
         `⭐  **Niveaux** · *Bientôt disponible*\n` +
         `🎭  **Rôles automatiques** · *Bientôt disponible*\n` +
         `🏅  **Rôles-Réactions** · *Bientôt disponible*\n` +
@@ -99,76 +99,33 @@ function homePanel(guild) {
      .addSeparatorComponents(sep())
      .addActionRowComponents(linksRow());
 
-    return {
-        components: [c],
-        flags: Flags.CV2_Ephemeral,
-    };
+    return { components: [c], flags: Flags.CV2_Ephemeral };
 }
-
 
 // ─── Arrivées & départs ───────────────────────────────────────────────────────
 
 function welcomePanel(guild) {
-    const icon = guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
-    const wc   = config.welcome ?? {};
-    const active      = wc.active    ?? false;
-    const channelStr  = wc.channelId ? `<#${wc.channelId}>` : '*Non défini*';
-    const roleStr     = wc.roleId    ? `<@&${wc.roleId}>`   : '*Aucun*';
-    const msgStr      = wc.message   ? `\`${wc.message.slice(0, 60)}${wc.message.length > 60 ? '…' : ''}\`` : '*Aucun*';
-    const statusStr   = active ? '🟢  **Actif**' : '🔴  **Inactif**';
-
-    const c = new ContainerBuilder().setAccentColor(0xd4a853);
-    const section = new SectionBuilder().addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-            `# 🚪  Arrivées & départs\n` +
-            `-# Message de bienvenue automatique avec banner personnalisé.`
-        )
-    );
-    if (icon) section.setThumbnailAccessory(new ThumbnailBuilder().setURL(icon));
-    c.addSectionComponents(section);
-
-    c.addSeparatorComponents(thinSep())
-     .addActionRowComponents(selectRow('welcome'))
-     .addSeparatorComponents(sep())
-     .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-        `### Configuration\n` +
-        `${statusStr}\n` +
-        `📢  **Salon de bienvenue** · ${channelStr}\n` +
-        `🎭  **Rôle automatique** · ${roleStr}\n` +
-        `💬  **Message personnalisé** · ${msgStr}`
-     ))
-     .addActionRowComponents(
-        new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId('welcome_toggle').setLabel(active ? 'Désactiver' : 'Activer').setEmoji(active ? '🔴' : '🟢').setStyle(active ? ButtonStyle.Danger : ButtonStyle.Success),
-            new ButtonBuilder().setCustomId('welcome_setchannel').setLabel('Salon').setEmoji('📢').setStyle(ButtonStyle.Secondary),
-            new ButtonBuilder().setCustomId('welcome_setrole').setLabel('Rôle auto').setEmoji('🎭').setStyle(ButtonStyle.Secondary),
-            new ButtonBuilder().setCustomId('welcome_setmessage').setLabel('Message').setEmoji('💬').setStyle(ButtonStyle.Secondary),
-        )
-     )
-     .addSeparatorComponents(sep())
-     .addActionRowComponents(
-        new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId('welcome_preview').setLabel('Aperçu').setEmoji('👁️').setStyle(ButtonStyle.Secondary),
-        )
-     );
-
-    return { components: [c, homeButton()], flags: Flags.CV2_Ephemeral };
+    const { buildWelcomePanel } = require('../interactions/buttons_welcome');
+    return {
+        components: [buildWelcomePanel(guild), homeButton()],
+        flags:      Flags.CV2_Ephemeral,
+    };
 }
 
 // ─── Tickets ──────────────────────────────────────────────────────────────────
 
 function ticketsPanel(guild) {
-    const icon = guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
-    const cats  = config.ticketCategories ?? {};
-    const keys  = Object.keys(cats);
-    const total = keys.length;
-    const openCount = Object.keys(require('./tickets').get() ?? {}).length;
+    const icon      = guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
+    const cats      = config.ticketCategories ?? {};
+    const keys      = Object.keys(cats);
+    const total     = keys.length;
+    const openCount = Object.keys(getTickets() ?? {}).length;
 
     const c = new ContainerBuilder().setAccentColor(0xd4a853);
 
     const section = new SectionBuilder().addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-            `# 🎫  Tickets\n` +
+            `# 🎟️  Tickets\n` +
             `-# Gérez les embeds et paramètres du système de tickets.`
         )
     );
@@ -186,14 +143,12 @@ function ticketsPanel(guild) {
     if (total > 0) {
         c.addSeparatorComponents(sep())
          .addTextDisplayComponents(new TextDisplayBuilder().setContent(`### Embeds actifs`));
-
         for (const key of keys) {
             const e   = cats[key];
             const catOk = e.categoryId          ? '🟢' : '🔴';
             const tsOk  = e.transcriptChannelId ? '🟢' : '🔴';
             const cat   = e.categoryId          ? `<#${e.categoryId}>`          : '*Non définie*';
             const ts    = e.transcriptChannelId ? `<#${e.transcriptChannelId}>` : '*Non défini*';
-
             c.addSeparatorComponents(thinSep())
              .addTextDisplayComponents(new TextDisplayBuilder().setContent(
                 `**${e.label}**\n` +
@@ -205,7 +160,7 @@ function ticketsPanel(guild) {
     } else {
         c.addSeparatorComponents(sep())
          .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-            `> ℹ️  Aucun embed configuré.\n> Utilisez le bouton **Gérer** ci-dessous pour commencer.`
+            `> ℹ️  Aucun embed configuré.\n> Utilisez le bouton ci-dessous pour commencer.`
          ));
     }
 
@@ -220,10 +175,7 @@ function ticketsPanel(guild) {
         )
      );
 
-    return {
-        components: [c, homeButton()],
-        flags: Flags.CV2_Ephemeral,
-    };
+    return { components: [c, homeButton()], flags: Flags.CV2_Ephemeral };
 }
 
 // ─── Module indisponible ──────────────────────────────────────────────────────
@@ -248,17 +200,12 @@ function unavailablePanel(module, guild) {
      .addSeparatorComponents(sep())
      .addTextDisplayComponents(new TextDisplayBuilder().setContent(
         `### 🔧  Module en développement\n\n` +
-        `Le module **${m.label}** n'est pas encore disponible sur Eldoria.\n\n` +
-        `Il sera ajouté dans une prochaine mise à jour. En attendant, tu peux :\n` +
-        `- Configurer les modules déjà disponibles\n` +
-        `- Revenir à l'accueil via le bouton ci-dessous`
+        `Le module **${m.label}** n'est pas encore disponible.\n` +
+        `Il sera ajouté dans une prochaine mise à jour.`
      ))
      .addSeparatorComponents(sep());
 
-    return {
-        components: [c, homeButton()],
-        flags: Flags.CV2_Ephemeral,
-    };
+    return { components: [c, homeButton()], flags: Flags.CV2_Ephemeral };
 }
 
 // ─── Dispatcher ──────────────────────────────────────────────────────────────

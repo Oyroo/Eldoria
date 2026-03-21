@@ -1,85 +1,108 @@
 const { Events } = require('discord.js');
-const Flags      = require('../utils/flags');
+
+const EPHEMERAL    = 64;
+const CV2          = 1 << 15;
+const CV2_EPHEMERAL = CV2 | EPHEMERAL;
 
 module.exports = {
     name: Events.InteractionCreate,
 
     async execute(interaction) {
         try {
+
+            // ── Autocomplete ──────────────────────────────────────────────────
             if (interaction.isAutocomplete()) {
                 const cmd = interaction.client.commands.get(interaction.commandName);
                 if (cmd?.autocomplete) await cmd.autocomplete(interaction);
                 return;
             }
 
+            // ── Slash commands ────────────────────────────────────────────────
             if (interaction.isChatInputCommand()) {
                 const cmd = interaction.client.commands.get(interaction.commandName);
                 if (cmd) await cmd.execute(interaction);
                 return;
             }
 
+            // ── Select menus ──────────────────────────────────────────────────
             if (interaction.isStringSelectMenu()) {
                 if (interaction.customId === 'config_rp_select') {
-                    const { handleSelectRp } = require('../interactions/selects_rp');
-                    await handleSelectRp(interaction);
-                    return;
+                    await interaction.deferUpdate();
+                    const { buildConfigRpMessage } = require('../utils/configRpPanels');
+                    const msg = buildConfigRpMessage(interaction.values[0], interaction.guild);
+                    return interaction.editReply({ components: msg.components });
                 }
-                const { handleSelect } = require('../interactions/selects');
-                await handleSelect(interaction);
+                if (interaction.customId === 'config_select') {
+                    await interaction.deferUpdate();
+                    const { buildConfigMessage } = require('../utils/configPanels');
+                    const msg = buildConfigMessage(interaction.values[0], interaction.guild);
+                    return interaction.editReply({ components: msg.components });
+                }
                 return;
             }
 
+            // ── Boutons ───────────────────────────────────────────────────────
             if (interaction.isButton()) {
-                // Retour accueil config
+
+                // Navigation /config
                 if (interaction.customId === 'config_home') {
+                    await interaction.deferUpdate();
                     const { buildConfigMessage } = require('../utils/configPanels');
-                    return interaction.update(buildConfigMessage('home', interaction.guild));
+                    const msg = buildConfigMessage('home', interaction.guild);
+                    return interaction.editReply({ components: msg.components });
                 }
 
+                // Navigation /config-rp
                 if (interaction.customId === 'config_rp_home') {
+                    await interaction.deferUpdate();
                     const { buildConfigRpMessage } = require('../utils/configRpPanels');
-                    return interaction.update(buildConfigRpMessage('home', interaction.guild));
+                    const msg = buildConfigRpMessage('home', interaction.guild);
+                    return interaction.editReply({ components: msg.components });
                 }
 
-                // Ouvre le panel ticket-config depuis /config
+                // Ouvrir ticket-config depuis /config
                 if (interaction.customId === 'config_tickets_open') {
+                    await interaction.deferUpdate();
                     const { mainPanel } = require('../utils/builders');
-                    const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
                     const icon = interaction.guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
-                    const homeBtn = new ActionRowBuilder().addComponents(
-                        new ButtonBuilder().setCustomId('config_home').setLabel('Accueil').setEmoji('🏡').setStyle(ButtonStyle.Secondary)
-                    );
-                    return interaction.update({ components: mainPanel(icon), flags: Flags.CV2 });
+                    return interaction.editReply({ components: mainPanel(icon) });
                 }
 
+                // Retour vers /config tickets depuis ticket-config
                 if (interaction.customId === 'cfg_back_to_config') {
+                    await interaction.deferUpdate();
                     const { buildConfigMessage } = require('../utils/configPanels');
-                    return interaction.update(buildConfigMessage('tickets', interaction.guild));
+                    const msg = buildConfigMessage('tickets', interaction.guild);
+                    return interaction.editReply({ components: msg.components });
                 }
 
+                // Météo
                 if (interaction.customId.startsWith('meteo_')) {
                     const { handleButtonRp } = require('../interactions/buttons_rp');
                     await handleButtonRp(interaction);
                     return;
                 }
 
+                // Welcome
                 if (interaction.customId.startsWith('welcome_')) {
                     const { handleButtonWelcome } = require('../interactions/buttons_welcome');
                     await handleButtonWelcome(interaction);
                     return;
                 }
+
+                // Tickets & config
                 const { handleButton } = require('../interactions/buttons');
                 await handleButton(interaction);
                 return;
             }
 
+            // ── Modals ────────────────────────────────────────────────────────
             if (interaction.isModalSubmit()) {
                 if (interaction.customId.startsWith('meteo_')) {
                     const { handleModalRp } = require('../interactions/buttons_rp');
                     await handleModalRp(interaction);
                     return;
                 }
-
                 if (interaction.customId.startsWith('welcome_')) {
                     const { handleModalWelcome } = require('../interactions/buttons_welcome');
                     await handleModalWelcome(interaction);
@@ -92,10 +115,10 @@ module.exports = {
 
         } catch (err) {
             console.error(`[${interaction.customId ?? interaction.commandName}]`, err.message);
-            const msg = { content: `❌ ${err.message}`, flags: Flags.Ephemeral };
+            const payload = { content: `❌ ${err.message}`, flags: EPHEMERAL };
             try {
-                if (interaction.replied || interaction.deferred) await interaction.followUp(msg);
-                else await interaction.reply(msg);
+                if (interaction.replied || interaction.deferred) await interaction.followUp(payload);
+                else await interaction.reply(payload);
             } catch {}
         }
     },
