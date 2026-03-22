@@ -4,7 +4,7 @@ const { buildConfigMessage }       = require('../utils/configPanels');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('config')
-        .setDescription('Ouvre le panel de configuration du serveur')
+        .setDescription('Ouvre le panel de configuration du serveur [ADMIN ONLY]')
         .setDefaultMemberPermissions('8'),
 
     async execute(interaction) {

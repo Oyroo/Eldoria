@@ -51,7 +51,7 @@ function buildLogsPanel(guild) {
      .addActionRowComponents(new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId('logs_mode_single').setLabel('Salon unique').setEmoji('📌').setStyle(mode === 'single' ? ButtonStyle.Primary : ButtonStyle.Secondary),
         new ButtonBuilder().setCustomId('logs_mode_multi').setLabel('Par catégorie').setEmoji('📂').setStyle(mode === 'multi' ? ButtonStyle.Primary : ButtonStyle.Secondary),
-        new ButtonBuilder().setCustomId('logs_autosetup').setLabel('Créer automatiquement').setEmoji('✨').setStyle(ButtonStyle.Success),
+        new ButtonBuilder().setCustomId('logs_autosetup').setLabel(logs.mode === 'multi' && logs.channels ? 'Déjà créé' : 'Créer automatiquement').setEmoji(logs.mode === 'multi' && logs.channels ? '✅' : '✨').setStyle(ButtonStyle.Success).setDisabled(!!(logs.mode === 'multi' && logs.channels)),
      ));
 
     // Si mode multi, afficher les catégories
@@ -122,6 +122,9 @@ async function handleButtonLogs(interaction) {
 
     if (id === 'logs_autosetup') {
         await interaction.deferUpdate();
+        if (config.logs?.mode === 'multi' && config.logs?.channels) {
+            return interaction.editReply({ components: [buildLogsPanel(interaction.guild)] });
+        }
         try {
             await autoSetupLogs(interaction.guild);
             return interaction.editReply({ components: [buildLogsPanel(interaction.guild)] });
