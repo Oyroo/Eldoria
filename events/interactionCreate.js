@@ -90,6 +90,13 @@ module.exports = {
                     return;
                 }
 
+                // Logs
+                if (interaction.customId.startsWith('logs_')) {
+                    const { handleButtonLogs } = require('../interactions/buttons_logs');
+                    await handleButtonLogs(interaction);
+                    return;
+                }
+
                 // Tickets & config
                 const { handleButton } = require('../interactions/buttons');
                 await handleButton(interaction);

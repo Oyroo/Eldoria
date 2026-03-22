@@ -12,7 +12,7 @@ const { get: getTickets } = require('./tickets');
 const MODULES = [
     { value: 'tickets',    label: 'Tickets',            emoji: '🎟️', available: true  },
     { value: 'moderation', label: 'Modération',         emoji: '🛡️', available: false },
-    { value: 'logs',       label: 'Logs',               emoji: '📜', available: false },
+    { value: 'logs',       label: 'Logs',               emoji: '📜', available: true  },
     { value: 'welcome',    label: 'Arrivées & départs', emoji: '🚪', available: true  },
     { value: 'autorole',   label: 'Rôles automatiques', emoji: '🎭', available: false },
     { value: 'levels',     label: 'Niveaux',            emoji: '⭐', available: false },
@@ -65,6 +65,11 @@ function homePanel(guild) {
     const totalEmbeds = Object.keys(config.ticketCategories ?? {}).length;
     const openTickets = Object.keys(getTickets() ?? {}).length;
 
+    const logsConf = config.logs ?? {};
+    const logsLine = logsConf.active
+        ? `Actif · mode ${logsConf.mode === 'single' ? 'salon unique' : 'multi-salons'}`
+        : logsConf.mode ? '*Inactif*' : '*Non configuré*';
+
     const wc = config.welcome ?? {};
     const welcomeLine = wc.active && wc.channelId
         ? `Actif · <#${wc.channelId}>${wc.roleId ? ` · <@&${wc.roleId}>` : ''}`
@@ -90,7 +95,7 @@ function homePanel(guild) {
         `🎟️  **Tickets** · ${totalEmbeds} embed${totalEmbeds !== 1 ? 's' : ''}, ${openTickets} ticket${openTickets !== 1 ? 's' : ''} ouvert${openTickets !== 1 ? 's' : ''}\n` +
         `🚪  **Arrivées & départs** · ${welcomeLine}\n` +
         `🛡️  **Modération** · *Bientôt disponible*\n` +
-        `📜  **Logs** · *Bientôt disponible*\n` +
+        `📜  **Logs** · ${logsLine}\n` +
         `⭐  **Niveaux** · *Bientôt disponible*\n` +
         `🎭  **Rôles automatiques** · *Bientôt disponible*\n` +
         `🏅  **Rôles-Réactions** · *Bientôt disponible*\n` +
@@ -178,6 +183,22 @@ function ticketsPanel(guild) {
     return { components: [c, homeButton()], flags: Flags.CV2_Ephemeral };
 }
 
+// ─── Logs ────────────────────────────────────────────────────────────────────
+
+function logsPanel(guild) {
+    const { buildLogsPanel } = require('../interactions/buttons_logs');
+    const { homeButton }     = (() => {
+        const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+        return { homeButton: () => new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId('config_home').setLabel('Accueil').setEmoji('🏡').setStyle(ButtonStyle.Secondary)
+        )};
+    })();
+    return {
+        components: [buildLogsPanel(guild), homeButton()],
+        flags: Flags.CV2_Ephemeral,
+    };
+}
+
 // ─── Module indisponible ──────────────────────────────────────────────────────
 
 function unavailablePanel(module, guild) {
@@ -213,6 +234,7 @@ function unavailablePanel(module, guild) {
 function buildConfigMessage(module = 'home', guild = null) {
     if (!module || module === 'home') return homePanel(guild);
     if (module === 'welcome')         return welcomePanel(guild);
+    if (module === 'logs')            return logsPanel(guild);
     if (module === 'tickets')         return ticketsPanel(guild);
     return unavailablePanel(module, guild);
 }

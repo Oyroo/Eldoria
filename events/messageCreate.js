@@ -16,6 +16,34 @@ module.exports = {
         // welcome → géré par messageCreate_welcome.js
         if (p.type === 'welcome_channel' || p.type === 'welcome_role') return;
 
+        // ── Logs ───────────────────────────────────────────────────────────────
+        if (p.type === 'logs_single_channel' || p.type?.startsWith('logs_channel:')) {
+            try { await msg.delete(); } catch {}
+            if (msg.content.trim().toLowerCase() === 'annuler') {
+                delete pending[msg.author.id];
+                const { buildLogsPanel } = require('../interactions/buttons_logs');
+                await patch(p.token, p.appId, [buildLogsPanel(msg.guild)]);
+                return;
+            }
+            delete pending[msg.author.id];
+            const id = msg.content.trim().replace(/[<#>]/g, '').trim();
+            try {
+                await msg.guild.channels.fetch(id);
+                if (!config.logs) config.logs = {};
+                if (p.type === 'logs_single_channel') {
+                    config.logs.channelId = id;
+                } else {
+                    const key = p.type.split(':')[1];
+                    if (!config.logs.channels) config.logs.channels = {};
+                    config.logs.channels[key] = id;
+                }
+                saveConfig();
+            } catch {}
+            const { buildLogsPanel } = require('../interactions/buttons_logs');
+            await patch(p.token, p.appId, [buildLogsPanel(msg.guild)]);
+            return;
+        }
+
         try { await msg.delete(); } catch {}
 
         const icon = msg.guild?.iconURL({ size: 256, extension: 'png' }) ?? null;

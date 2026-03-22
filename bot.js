@@ -3,7 +3,6 @@ const fs      = require('fs');
 const path    = require('path');
 const client  = require('./client');
 
-// ── Keep-alive Render ─────────────────────────────────────────────────────────
 const app = express();
 app.get('/', (_, res) => res.send('Eldoria online'));
 app.listen(3000);
@@ -29,14 +28,26 @@ if (fs.existsSync(evtDir)) {
     }
 }
 
+// ── Événements de logs ────────────────────────────────────────────────────────
+const logsDir = path.join(__dirname, 'events', 'logs');
+if (fs.existsSync(logsDir)) {
+    for (const file of fs.readdirSync(logsDir).filter(f => f.endsWith('.js'))) {
+        const evts = require(`./events/logs/${file}`);
+        const list = Array.isArray(evts) ? evts : [evts];
+        for (const evt of list) {
+            client[evt.once ? 'once' : 'on'](evt.name, (...args) => evt.execute(...args));
+        }
+        console.log(`📋 logs/${file}`);
+    }
+}
+
+process.on('unhandledRejection', err => {
+    console.error('Unhandled rejection:', err?.message ?? err);
+});
+
 client.once('clientReady', () => {
     const { startScheduler } = require('./utils/meteo');
     startScheduler(client);
-});
-
-// Empêche le bot de crasher sur les erreurs non gérées
-process.on('unhandledRejection', err => {
-    console.error('Unhandled rejection:', err?.message ?? err);
 });
 
 client.login(process.env.TOKEN);
