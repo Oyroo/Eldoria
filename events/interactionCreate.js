@@ -126,7 +126,8 @@ module.exports = {
 
         } catch (err) {
             console.error(`[${interaction.customId ?? interaction.commandName}]`, err.message);
-            if (interaction.guild) logError(interaction.guild, interaction.customId ?? interaction.commandName, err).catch(() => {});
+            const IGNORE_CODES = [10062, 40060];
+            if (interaction.guild && !IGNORE_CODES.includes(err.code)) logError(interaction.guild, interaction.customId ?? interaction.commandName, err).catch(() => {});
             const payload = { content: `❌ ${err.message}`, flags: EPHEMERAL };
             try {
                 if (interaction.replied || interaction.deferred) await interaction.followUp(payload);
