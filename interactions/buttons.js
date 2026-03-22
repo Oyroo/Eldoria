@@ -12,6 +12,7 @@ const { intToHex, colorInt }                    = require('../utils/helpers');
 const { pending }                               = require('../utils/pending');
 const { get: getTickets, save: saveTickets }    = require('../utils/tickets');
 const { generate }                              = require('../utils/transcript');
+const { logTicketOpen, logTicketClose, logError } = require('../utils/botLogger');
 const { mainPanel, categoryPanel, deletePanel, awaitPanel, ticketEmbed, ticketOpenRow, ticketControlRow } = require('../utils/builders');
 
 function icon(guild) { return guild?.iconURL({ size: 256, extension: 'png' }) ?? null; }

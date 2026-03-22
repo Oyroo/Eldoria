@@ -1,5 +1,6 @@
 const { Events, ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, MediaGalleryBuilder, MediaGalleryItemBuilder } = require('discord.js');
 const { config }                = require('../utils/config');
+const { logWelcome }            = require('../utils/botLogger');
 const { generateWelcomeBanner } = require('../utils/welcomeImage');
 
 const CV2 = 1 << 15; // 32768
@@ -56,6 +57,7 @@ module.exports = {
                 )
             );
 
+            logWelcome(member.guild, member).catch(() => {});
             await channel.send({
                 files:      [{ attachment: buffer, name: 'welcome.png' }],
                 components: [c],

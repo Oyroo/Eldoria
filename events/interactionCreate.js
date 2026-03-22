@@ -1,6 +1,7 @@
 const { Events } = require('discord.js');
 
 const EPHEMERAL    = 64;
+const { logCommand, logError } = require('../utils/botLogger');
 const CV2          = 1 << 15;
 const CV2_EPHEMERAL = CV2 | EPHEMERAL;
 
@@ -20,7 +21,10 @@ module.exports = {
             // ── Slash commands ────────────────────────────────────────────────
             if (interaction.isChatInputCommand()) {
                 const cmd = interaction.client.commands.get(interaction.commandName);
-                if (cmd) await cmd.execute(interaction);
+                if (cmd) {
+                    await cmd.execute(interaction);
+                    logCommand(interaction.guild, interaction.user, interaction.commandName).catch(() => {});
+                }
                 return;
             }
 
@@ -122,6 +126,7 @@ module.exports = {
 
         } catch (err) {
             console.error(`[${interaction.customId ?? interaction.commandName}]`, err.message);
+            if (interaction.guild) logError(interaction.guild, interaction.customId ?? interaction.commandName, err).catch(() => {});
             const payload = { content: `❌ ${err.message}`, flags: EPHEMERAL };
             try {
                 if (interaction.replied || interaction.deferred) await interaction.followUp(payload);

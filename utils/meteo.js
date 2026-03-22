@@ -191,6 +191,7 @@ function startScheduler(client) {
     // Vérifie toutes les minutes si c'est l'heure d'envoyer la météo
     schedulerInterval = setInterval(async () => {
         const { config, saveConfig } = require('./config');
+const { logMeteo }            = require('./botLogger');
         const meteoConfig = config.meteo;
         if (!meteoConfig?.active || !meteoConfig?.channelId || !meteoConfig?.heure) return;
 
@@ -217,6 +218,7 @@ function startScheduler(client) {
             const embed = buildMeteoEmbed(prochaine, guildIconURL);
             await channel.send({ components: [embed], flags: Flags.CV2 });
 
+            logMeteo(channel.guild, METEOS[prochaine].label, channel).catch(() => {});
             console.log(`☀️ Météo envoyée : ${METEOS[prochaine].label} dans #${channel.name}`);
         } catch (err) {
             console.error('Erreur envoi météo :', err.message);
