@@ -52,6 +52,9 @@ function buildLogsPanel(guild) {
         new ButtonBuilder().setCustomId('logs_mode_single').setLabel('Salon unique').setEmoji('📌').setStyle(mode === 'single' ? ButtonStyle.Primary : ButtonStyle.Secondary),
         new ButtonBuilder().setCustomId('logs_mode_multi').setLabel('Par catégorie').setEmoji('📂').setStyle(mode === 'multi' ? ButtonStyle.Primary : ButtonStyle.Secondary),
         new ButtonBuilder().setCustomId('logs_autosetup').setLabel(logs.mode === 'multi' && logs.channels ? 'Déjà créé' : 'Créer automatiquement').setEmoji(logs.mode === 'multi' && logs.channels ? '✅' : '✨').setStyle(ButtonStyle.Success).setDisabled(!!(logs.mode === 'multi' && logs.channels)),
+        ...(logs.mode === 'multi' && logs.channels ? [
+            new ButtonBuilder().setCustomId('logs_reset').setLabel('Supprimer les salons').setEmoji('🗑️').setStyle(ButtonStyle.Danger),
+        ] : []),
      ));
 
     // Si mode multi, afficher les catégories
@@ -131,6 +134,28 @@ async function handleButtonLogs(interaction) {
         } catch (err) {
             return interaction.editReply({ content: `❌ Erreur : \`${err.message}\`` });
         }
+    }
+
+    if (id === 'logs_reset') {
+        await interaction.deferUpdate();
+        const channels = config.logs?.channels ?? {};
+        let deleted = 0, failed = 0;
+        for (const chId of Object.values(channels)) {
+            try {
+                const ch = await interaction.guild.channels.fetch(chId).catch(() => null);
+                if (ch) { await ch.delete(); deleted++; }
+            } catch { failed++; }
+        }
+        // Tenter de supprimer la catégorie si vide
+        try {
+            const allChannels = await interaction.guild.channels.fetch();
+            const cat = allChannels.find(c => c.name === '📋 LOGS' && c.type === 4);
+            if (cat) await cat.delete();
+        } catch {}
+        config.logs.channels = null;
+        config.logs.mode     = null;
+        saveConfig();
+        return interaction.editReply({ components: [buildLogsPanel(interaction.guild)] });
     }
 
     if (id.startsWith('logs_setchan:')) {
