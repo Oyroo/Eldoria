@@ -1,11 +1,16 @@
-const { Events }  = require('discord.js');
-const { load }    = require('../utils/tickets');
+const { Events }       = require('discord.js');
+const { loadConfig }   = require('../utils/config');
+const { load: loadTickets } = require('../utils/tickets');
+const { startScheduler }    = require('../utils/meteo');
 
 module.exports = {
     name: Events.ClientReady,
     once: true,
-    execute(client) {
-        load();
-        console.log(`✅ ${client.user.tag}`);
+
+    async execute(client) {
+        await loadConfig();
+        loadTickets();
+        startScheduler(client);
+        console.log(`✅ ${client.user.tag} prêt.`);
     },
 };

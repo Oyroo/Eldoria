@@ -10,7 +10,8 @@
         "discord.js": "^14.25.1",
         "express": "^5.2.1",
         "@napi-rs/canvas": "^0.1.57",
-        "@fontsource/jost": "^5.1.1"
+        "@fontsource/jost": "^5.1.1",
+        "mongodb": "^6.5.0"
     },
     "type": "commonjs"
 }

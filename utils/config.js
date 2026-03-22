@@ -1,89 +1,57 @@
-const fs   = require('fs');
-const path = require('path');
-const https = require('https');
+const { MongoClient } = require('mongodb');
 
-const FILE = path.join(__dirname, '..', 'config.json');
+const URI = process.env.MONGODB_URI;
+const DB  = 'eldoria';
+const COL = 'config';
 
-// ─── Restauration depuis CONFIG_DATA ─────────────────────────────────────────
+let col = null;
 
-function restoreFromEnv() {
-    if (!process.env.CONFIG_DATA) return null;
-    try { return JSON.parse(process.env.CONFIG_DATA); }
-    catch { console.error('❌ CONFIG_DATA invalide.'); return null; }
+async function connect() {
+    if (col) return col;
+    const client = new MongoClient(URI, { serverSelectionTimeoutMS: 5000 });
+    await client.connect();
+    col = client.db(DB).collection(COL);
+    console.log('🍃 MongoDB connecté.');
+    return col;
 }
 
-let config;
-const fromEnv = restoreFromEnv();
+// Config en mémoire — partagée par tout le bot
+const config = {
+    guildId:          process.env.GUILD_ID ?? '',
+    ticketCounter:    0,
+    ticketCategories: {},
+    meteo:            {},
+    welcome:          {},
+};
 
-if (!fs.existsSync(FILE)) {
-    config = fromEnv ?? {
-        guildId:          process.env.GUILD_ID ?? '',
-        ticketCounter:    0,
-        ticketCategories: {},
-    };
-    fs.writeFileSync(FILE, JSON.stringify(config, null, 4));
-    console.log(fromEnv ? '📄 config.json restauré depuis CONFIG_DATA.' : '📄 config.json créé (vide).');
-} else {
-    config = JSON.parse(fs.readFileSync(FILE, 'utf-8'));
-    if (fromEnv) {
-        let merged = false;
-        for (const key of Object.keys(fromEnv)) {
-            if (config[key] === undefined || config[key] === null) {
-                config[key] = fromEnv[key];
-                merged = true;
-            }
+// Appelé au démarrage dans events/ready.js
+async function loadConfig() {
+    try {
+        const c   = await connect();
+        const doc = await c.findOne({ _id: 'main' });
+        if (doc) {
+            delete doc._id;
+            Object.assign(config, doc);
+            console.log('📄 Config chargée depuis MongoDB.');
+        } else {
+            await c.insertOne({ _id: 'main', ...config });
+            console.log('📄 Config initialisée dans MongoDB.');
         }
-        if (merged) {
-            fs.writeFileSync(FILE, JSON.stringify(config, null, 4));
-            console.log('🔀 config.json complété depuis CONFIG_DATA.');
-        }
+    } catch (err) {
+        console.error('❌ MongoDB loadConfig:', err.message);
     }
 }
 
-config.guildId          ??= process.env.GUILD_ID ?? '';
-config.ticketCounter    ??= 0;
-config.ticketCategories ??= {};
-
-// ─── Sync automatique vers Render API ────────────────────────────────────────
-
-let syncTimeout = null;
-
-function syncToRender(json) {
-    const apiKey    = process.env.RENDER_API_KEY;
-    const serviceId = process.env.RENDER_SERVICE_ID;
-    if (!apiKey || !serviceId) return;
-
-    const body = JSON.stringify([{ key: 'CONFIG_DATA', value: json }]);
-
-    const req = https.request({
-        hostname: 'api.render.com',
-        path:     `/v1/services/${serviceId}/env-vars`,
-        method:   'PUT',
-        headers:  {
-            'Content-Type':  'application/json',
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Length': Buffer.byteLength(body),
-        },
-    }, res => {
-        if (res.statusCode === 200 || res.statusCode === 201) {
-            console.log('☁️  CONFIG_DATA synchronisé sur Render.');
-        } else {
-            console.error('⚠️  Render API: HTTP', res.statusCode);
-        }
-    });
-
-    req.on('error', err => console.error('⚠️  Render sync erreur:', err.message));
-    req.write(body);
-    req.end();
-}
-
-// ─── Sauvegarde ───────────────────────────────────────────────────────────────
-
+// Fire and forget — ne bloque jamais le bot
 function saveConfig() {
-    fs.writeFileSync(FILE, JSON.stringify(config, null, 4));
-    // Debounce 2s pour éviter les appels en rafale
-    clearTimeout(syncTimeout);
-    syncTimeout = setTimeout(() => syncToRender(JSON.stringify(config)), 2000);
+    connect()
+        .then(c => c.replaceOne(
+            { _id: 'main' },
+            { _id: 'main', ...config },
+            { upsert: true }
+        ))
+        .then(() => console.log('💾 Config sauvegardée.'))
+        .catch(err => console.error('❌ MongoDB saveConfig:', err.message));
 }
 
-module.exports = { config, saveConfig };
+module.exports = { config, loadConfig, saveConfig };
