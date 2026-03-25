@@ -221,6 +221,9 @@ async function handleButton(interaction) {
     }
 
     if (id === 'ticket_claim') {
+        if (!interaction.member.permissions.has('Administrator')) {
+            return interaction.reply({ content: '❌ Seuls les administrateurs peuvent claim un ticket.', flags: Flags.Ephemeral });
+        }
         const tickets = getTickets();
         const info    = tickets[interaction.channelId];
         if (!info) return interaction.reply({ content: '❌ Ticket introuvable.', flags: Flags.Ephemeral });
