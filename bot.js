@@ -1,7 +1,6 @@
 const express = require('express');
 const fs      = require('fs');
-const path    = require('path');
-const fetch   = require('node-fetch'); // pour keep-alive
+const path    = require('path');v
 const client  = require('./client');
 
 const app = express();
@@ -20,7 +19,7 @@ app.listen(PORT, () => console.log(`🌐 Web server listening on port ${PORT}`))
 // ── Keep-alive pour Render Free ─────────────────────────────────────────────
 setInterval(() => {
     fetch(`http://localhost:${PORT}/status`).catch(() => {});
-}, 3 * 60 * 1000); // toutes les 9 minutes
+}, 3 * 60 * 1000); // toutes les 3 minutes
 
 // ── Commandes ───────────────────────────────────────────────────────────────
 client.commands = new Map();
