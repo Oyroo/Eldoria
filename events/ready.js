@@ -17,7 +17,7 @@ module.exports = {
         // 🎯 Liste de statuts
         const statuses = [
             { type: 0, getName: (guild) => `Bot du serveur 🪽﹒Eldoria !` },
-            { type: 3, getName: (guild) => `${guild.memberCount} aventuriers.. Deviens l'un d'entre eux !` },
+            { type: 3, getName: (guild) => `${guild.memberCount} aventuriers.. Rejoins les !` },
             { type: 3, getName: (guild) => `Lien du serveur en Bio !` }
         ];
 
