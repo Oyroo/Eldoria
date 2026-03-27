@@ -240,6 +240,36 @@ async function handleButton(interaction) {
         const info    = tickets[interaction.channelId];
         if (!info) return interaction.reply({ content: '❌ Ticket introuvable.', flags: Flags.Ephemeral });
 
+        // Confirmation avant fermeture
+        return interaction.reply({
+            content: '⚠️ **Fermer ce ticket ?**\nLe transcript sera généré et le salon supprimé.',
+            components: [
+                new ActionRowBuilder().addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('ticket_close_confirm')
+                        .setLabel('Fermer le ticket')
+                        .setEmoji('🔒')
+                        .setStyle(ButtonStyle.Danger),
+                    new ButtonBuilder()
+                        .setCustomId('ticket_close_cancel')
+                        .setLabel('Annuler')
+                        .setEmoji('✖️')
+                        .setStyle(ButtonStyle.Secondary),
+                ),
+            ],
+            flags: Flags.Ephemeral,
+        });
+    }
+
+    if (id === 'ticket_close_cancel') {
+        return interaction.reply({ content: '✅ Fermeture annulée.', flags: Flags.Ephemeral });
+    }
+
+    if (id === 'ticket_close_confirm') {
+        const tickets = getTickets();
+        const info    = tickets[interaction.channelId];
+        if (!info) return interaction.reply({ content: '❌ Ticket introuvable.', flags: Flags.Ephemeral });
+
         await interaction.reply({ content: '🔒 Fermeture en cours...' });
 
         try {
