@@ -5,21 +5,13 @@ const client  = require('./client');
 
 const app = express();
 
-// ── Endpoint status ─────────────────────────────────────────────────────────
-app.get('/status', (_, res) => {
-    res.json({
-        web: 'online',
-        discord: client.isReady() ? 'online' : 'offline'
-    });
+// ── Route principale (pour Render + UptimeRobot) ────────────────────────────
+app.get('/', (_, res) => {
+    res.send('Eldoria online');
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🌐 Web server listening on port ${PORT}`));
-
-// ── Keep-alive pour Render Free ─────────────────────────────────────────────
-setInterval(() => {
-    fetch(`http://localhost:${PORT}/status`).catch(() => {});
-}, 3 * 60 * 1000); // toutes les 3 minutes
 
 // ── Commandes ───────────────────────────────────────────────────────────────
 client.commands = new Map();
