@@ -18,6 +18,7 @@ const MODULES = [
     { value: 'levels',     label: 'Niveaux',            emoji: '⭐', available: false },
     { value: 'rolereact',  label: 'Rôles-Réactions',   emoji: '🏅', available: false },
     { value: 'report',     label: 'Signalements',       emoji: '🚩', available: false },
+    { value: 'invites',    label: 'Invite Logger',       emoji: '🔗', available: true  },
 ];
 
 function sep()     { return new SeparatorBuilder().setDivider(true).setSpacing(2); }
@@ -65,6 +66,12 @@ function homePanel(guild) {
     const totalEmbeds = Object.keys(config.ticketCategories ?? {}).length;
     const openTickets = Object.keys(getTickets() ?? {}).length;
 
+    const inviteConf = config.inviteTracker ?? {};
+    const invitePartners = Object.keys(config.invitePartners ?? {}).length;
+    const inviteLine = inviteConf.forumChannelId
+        ? `Actif · ${invitePartners} partenaire${invitePartners !== 1 ? 's' : ''}`
+        : '*Non configuré*';
+
     const logsConf = config.logs ?? {};
     const logsLine = logsConf.active
         ? `Actif · mode ${logsConf.mode === 'single' ? 'salon unique' : 'multi-salons'}`
@@ -99,7 +106,8 @@ function homePanel(guild) {
         `⭐  **Niveaux** · *Bientôt disponible*\n` +
         `🎭  **Rôles automatiques** · *Bientôt disponible*\n` +
         `🏅  **Rôles-Réactions** · *Bientôt disponible*\n` +
-        `🚩  **Signalements** · *Bientôt disponible*`
+        `🚩  **Signalements** · *Bientôt disponible*\n` +
+        `🔗  **Invite Logger** · ${inviteLine}`
      ))
      .addSeparatorComponents(sep())
      .addActionRowComponents(linksRow());
@@ -199,6 +207,16 @@ function logsPanel(guild) {
     };
 }
 
+// ─── Invite Logger ────────────────────────────────────────────────────────────
+
+function invitesPanel(guild) {
+    const { buildInvitesPanel } = require('../interactions/buttons_invites');
+    return {
+        components: [buildInvitesPanel(guild), homeButton()],
+        flags: Flags.CV2_Ephemeral,
+    };
+}
+
 // ─── Module indisponible ──────────────────────────────────────────────────────
 
 function unavailablePanel(module, guild) {
@@ -235,6 +253,7 @@ function buildConfigMessage(module = 'home', guild = null) {
     if (!module || module === 'home') return homePanel(guild);
     if (module === 'welcome')         return welcomePanel(guild);
     if (module === 'logs')            return logsPanel(guild);
+    if (module === 'invites')         return invitesPanel(guild);
     if (module === 'tickets')         return ticketsPanel(guild);
     return unavailablePanel(module, guild);
 }

@@ -94,6 +94,13 @@ module.exports = {
                     return;
                 }
 
+                // Invite tracker
+                if (interaction.customId.startsWith('inv_')) {
+                    const { handleButtonInvites } = require('../interactions/buttons_invites');
+                    await handleButtonInvites(interaction);
+                    return;
+                }
+
                 // Logs
                 if (interaction.customId.startsWith('logs_')) {
                     const { handleButtonLogs } = require('../interactions/buttons_logs');

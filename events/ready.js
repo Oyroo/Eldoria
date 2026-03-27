@@ -2,6 +2,7 @@ const { Events }       = require('discord.js');
 const { loadConfig }   = require('../utils/config');
 const { load: loadTickets } = require('../utils/tickets');
 const { startScheduler }    = require('../utils/meteo');
+const { initInviteCache }   = require('../utils/inviteTracker');
 
 module.exports = {
     name: Events.ClientReady,
@@ -11,36 +12,20 @@ module.exports = {
         await loadConfig();
         loadTickets();
         startScheduler(client);
+        // Init cache invitations pour toutes les guilds
+        for (const guild of client.guilds.cache.values()) {
+            await initInviteCache(guild);
+        }
+        // Cache invitations
+        try {
+            const { refreshCache } = require('./inviteTracker');
+            const guild = client.guilds.cache.get(process.env.GUILD_ID);
+            if (guild) await refreshCache(guild);
+            console.log('🔗 Cache invitations initialisé.');
+        } catch (err) {
+            console.error('Cache invitations:', err.message);
+        }
 
         console.log(`✅ ${client.user.tag} prêt.`);
-
-        // 🎯 Liste de statuts
-        const statuses = [
-            { type: 0, getName: (guild) => `Bot du serveur 🪽﹒Eldoria !` },
-            { type: 3, getName: (guild) => `${guild.memberCount} aventuriers.. Rejoins les !` },
-            { type: 3, getName: (guild) => `Lien du serveur en Bio !` }
-        ];
-
-        let i = 0;
-
-        const updateStatus = () => {
-            const guild = client.guilds.cache.first();
-            if (!guild) return;
-
-            const status = statuses[i];
-
-            client.user.setPresence({
-                activities: [{
-                    name: status.getName(guild),
-                    type: status.type
-                }],
-                status: 'online'
-            });
-
-            i = (i + 1) % statuses.length;
-        };
-
-        updateStatus();
-        setInterval(updateStatus, 5 * 60 * 1000);
     },
 };

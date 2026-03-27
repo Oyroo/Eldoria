@@ -1,14 +1,48 @@
 const { Events, ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, MediaGalleryBuilder, MediaGalleryItemBuilder } = require('discord.js');
 const { config }                = require('../utils/config');
-const { logWelcome }            = require('../utils/botLogger');
 const { generateWelcomeBanner } = require('../utils/welcomeImage');
+const { logWelcome }            = require('../utils/botLogger');
+const { detectUsedInvite, getPartnerByCode } = require('../utils/inviteTracker');
+const { logJoin }               = require('../utils/inviteForum');
 
-const CV2 = 1 << 15; // 32768
+const CV2 = 1 << 15;
 
 module.exports = {
     name: Events.GuildMemberAdd,
 
     async execute(member) {
+
+        // ── Invite tracker ────────────────────────────────────────────────────
+        if (config.inviteTracker?.forumChannelId) {
+            try {
+                const usedCode = await detectUsedInvite(member.guild);
+                let source = { type: 'unknown' };
+
+                if (usedCode) {
+                    const aoCode  = config.inviteTracker?.aowynCode;
+                    const disCode = config.inviteTracker?.disboardCode;
+
+                    if (aoCode && usedCode === aoCode) {
+                        source = { type: 'aowyn', code: usedCode };
+                    } else if (disCode && usedCode === disCode) {
+                        source = { type: 'disboard', code: usedCode };
+                    } else {
+                        const partner = getPartnerByCode(usedCode);
+                        if (partner) {
+                            source = { type: 'partner', partnerId: partner.id, partnerName: partner.name, code: usedCode };
+                        } else {
+                            source = { type: 'unknown', code: usedCode };
+                        }
+                    }
+                }
+
+                await logJoin(member.guild, member, source);
+            } catch (err) {
+                console.error('inviteTracker error:', err.message);
+            }
+        }
+
+        // ── Message de bienvenue ──────────────────────────────────────────────
         const wc = config.welcome;
         if (!wc?.active || !wc?.channelId) return;
 
@@ -16,28 +50,22 @@ module.exports = {
             const channel = await member.guild.channels.fetch(wc.channelId);
             if (!channel) return;
 
-            // Rôle automatique
             if (wc.roleId) {
                 try { await member.roles.add(wc.roleId); } catch (e) {
                     console.error('Rôle auto erreur:', e.message);
                 }
             }
 
-            // Générer le banner
             const buffer = await generateWelcomeBanner(member);
 
-            // Message personnalisé
             const customMsg = wc.message
                 ?.replace(/\{user\}/g,   `<@${member.id}>`)
                 ?.replace(/\{server\}/g, member.guild.name);
 
-            // Container CV2 avec image intégrée
             const c = new ContainerBuilder()
                 .setAccentColor(0xd4a853)
                 .addTextDisplayComponents(
-                    new TextDisplayBuilder().setContent(
-                        `# Bienvenue, <@${member.id}> ! 🎉`
-                    )
+                    new TextDisplayBuilder().setContent(`# Bienvenue, <@${member.id}> ! 🎉`)
                 )
                 .addMediaGalleryComponents(
                     new MediaGalleryBuilder().addItems(
@@ -58,6 +86,7 @@ module.exports = {
             );
 
             logWelcome(member.guild, member).catch(() => {});
+
             await channel.send({
                 files:      [{ attachment: buffer, name: 'welcome.png' }],
                 components: [c],

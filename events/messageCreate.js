@@ -13,6 +13,30 @@ module.exports = {
         const p = pending[msg.author.id];
         if (!p || msg.guildId !== p.guildId) return;
 
+        // invite tracker inputs
+        if (['inv_forum', 'inv_aowyn', 'inv_disboard'].includes(p.type)) {
+            try { await msg.delete(); } catch {}
+            if (msg.content.trim().toLowerCase() === 'annuler') {
+                delete pending[msg.author.id];
+                const { buildInvitesPanel } = require('../interactions/buttons_invites');
+                await patch(p.token, p.appId, [buildInvitesPanel(msg.guild)]);
+                return;
+            }
+            delete pending[msg.author.id];
+            const val = msg.content.trim().replace(/[<#>]/g, '').trim();
+            if (!config.inviteTracker) config.inviteTracker = {};
+            if (p.type === 'inv_forum') {
+                try { await msg.guild.channels.fetch(val); config.inviteTracker.forumChannelId = val; saveConfig(); } catch {}
+            } else if (p.type === 'inv_aowyn') {
+                config.inviteTracker.aowynCode = val; saveConfig();
+            } else if (p.type === 'inv_disboard') {
+                config.inviteTracker.disboardCode = val; saveConfig();
+            }
+            const { buildInvitesPanel } = require('../interactions/buttons_invites');
+            await patch(p.token, p.appId, [buildInvitesPanel(msg.guild)]);
+            return;
+        }
+
         // welcome → géré par messageCreate_welcome.js
         if (p.type === 'welcome_channel' || p.type === 'welcome_role') return;
 
