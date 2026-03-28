@@ -84,4 +84,4 @@ function hasOptedOut(userId, type) {
     return config.bumpOptOut?.[type]?.includes(userId) ?? false;
 }
  
-module.exports = { recordAction, restoreTimers, userOptOut, userOptIn, hasOptedOut };
+module.exports = { recordAction, restoreReminders, userOptOut, userOptIn, hasOptedOut };
