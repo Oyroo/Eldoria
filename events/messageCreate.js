@@ -13,6 +13,61 @@ module.exports = {
         const p = pending[msg.author.id];
         if (!p || msg.guildId !== p.guildId) return;
 
+        // bump reminder inputs
+        if (p.type?.startsWith('bump_')) {
+            try { await msg.delete(); } catch {}
+            if (msg.content.trim().toLowerCase() === 'annuler') {
+                delete pending[msg.author.id];
+                const { buildBumpPanel } = require('../interactions/buttons_bump');
+                await patch(p.token, p.appId, [buildBumpPanel(msg.guild)]);
+                return;
+            }
+            delete pending[msg.author.id];
+            const val = msg.content.trim().replace(/[<@&!#>]/g, '').trim();
+            const [field, type] = p.type.replace('bump_', '').split(':');
+            if (!config.bumpReminders) config.bumpReminders = {};
+            if (!config.bumpReminders[type]) config.bumpReminders[type] = {};
+            try {
+                if (field === 'chan') {
+                    await msg.guild.channels.fetch(val);
+                    config.bumpReminders[type].channelId = val;
+                } else if (field === 'role') {
+                    if (val.toLowerCase() === 'aucun') {
+                        config.bumpReminders[type].roleId = null;
+                    } else {
+                        await msg.guild.roles.fetch(val);
+                        config.bumpReminders[type].roleId = val;
+                    }
+                }
+                saveConfig();
+            } catch {}
+            const { buildBumpPanel } = require('../interactions/buttons_bump');
+            await patch(p.token, p.appId, [buildBumpPanel(msg.guild)]);
+            return;
+        }
+
+        // welcome general channel
+        if (p.type === 'welcome_gen_channel') {
+            try { await msg.delete(); } catch {}
+            if (msg.content.trim().toLowerCase() === 'annuler') {
+                delete pending[msg.author.id];
+                const { buildWelcomePanel } = require('../interactions/buttons_welcome');
+                await patch(p.token, p.appId, [buildWelcomePanel(msg.guild)]);
+                return;
+            }
+            delete pending[msg.author.id];
+            const val = msg.content.trim().replace(/[<#>]/g, '').trim();
+            try {
+                await msg.guild.channels.fetch(val);
+                if (!config.welcome) config.welcome = {};
+                config.welcome.generalChannelId = val;
+                saveConfig();
+            } catch {}
+            const { buildWelcomePanel } = require('../interactions/buttons_welcome');
+            await patch(p.token, p.appId, [buildWelcomePanel(msg.guild)]);
+            return;
+        }
+
         // invite tracker inputs
         if (['inv_forum', 'inv_aowyn', 'inv_disboard'].includes(p.type)) {
             try { await msg.delete(); } catch {}

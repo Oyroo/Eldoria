@@ -76,11 +76,24 @@ function buildWelcomePanel(guild) {
         )
      )
      .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2))
+     .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+        `### Message dans le général\n` +
+        `${genActive ? '🟢' : '🔴'}  **Statut** · ${genActive ? 'Actif' : 'Inactif'}\n` +
+        `📢  **Salon général** · ${genChanStr}`
+     ))
+     .addActionRowComponents(
+        new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId('welcome_gen_toggle').setLabel(genActive ? 'Désactiver' : 'Activer').setEmoji(genActive ? '🔴' : '🟢').setStyle(genActive ? ButtonStyle.Danger : ButtonStyle.Success),
+            new ButtonBuilder().setCustomId('welcome_gen_setchannel').setLabel('Salon général').setEmoji('📢').setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('welcome_gen_edit').setLabel('Modifier le message').setEmoji('✏️').setStyle(ButtonStyle.Primary),
+        )
+     )
+     .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2))
      .addActionRowComponents(
         new ActionRowBuilder().addComponents(
             new ButtonBuilder()
                 .setCustomId('welcome_preview')
-                .setLabel('Aperçu')
+                .setLabel('Aperçu banner')
                 .setEmoji('👁️')
                 .setStyle(ButtonStyle.Secondary),
         )
@@ -181,6 +194,30 @@ async function handleButtonWelcome(interaction) {
             )
         );
         return interaction.showModal(modal);
+    }
+
+    // Message général — toggle
+    if (id === 'welcome_gen_toggle') {
+        await interaction.deferUpdate();
+        if (!config.welcome) config.welcome = {};
+        config.welcome.generalActive = !config.welcome.generalActive;
+        saveConfig();
+        return interaction.editReply({ components: [buildWelcomePanel(interaction.guild)] });
+    }
+
+    // Message général — salon
+    if (id === 'welcome_gen_setchannel') {
+        await interaction.deferUpdate();
+        pending[interaction.user.id] = { type: 'welcome_gen_channel', token: interaction.token, appId: interaction.client.application.id, guildId: interaction.guildId };
+        const [c, row] = buildAwaitPanel('📢', 'Salon général', 'Envoie le **#salon** ou son **ID**.', 'Le message de bienvenue général y sera envoyé.');
+        return interaction.editReply({ components: [c, row] });
+    }
+
+    // Message général — éditeur CV2
+    if (id === 'welcome_gen_edit') {
+        await interaction.deferUpdate();
+        const { buildGeneralMsgEditor } = require('./buttons_welcome_editor');
+        return interaction.editReply({ components: [buildGeneralMsgEditor(interaction.guild)] });
     }
 
     // Annuler la saisie

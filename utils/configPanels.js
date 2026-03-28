@@ -19,6 +19,7 @@ const MODULES = [
     { value: 'rolereact',  label: 'Rôles-Réactions',   emoji: '🏅', available: false },
     { value: 'report',     label: 'Signalements',       emoji: '🚩', available: false },
     { value: 'invites',    label: 'Invite Logger',       emoji: '🔗', available: true  },
+    { value: 'bump',       label: 'Bump & Reminders',    emoji: '📣', available: true  },
 ];
 
 function sep()     { return new SeparatorBuilder().setDivider(true).setSpacing(2); }
@@ -66,6 +67,11 @@ function homePanel(guild) {
     const totalEmbeds = Object.keys(config.ticketCategories ?? {}).length;
     const openTickets = Object.keys(getTickets() ?? {}).length;
 
+    const bumpConf = config.bumpReminders ?? {};
+    const bumpLine = bumpConf.bump?.channelId || bumpConf.vote?.channelId
+        ? `Configuré${bumpConf.bump?.channelId ? ' · bump' : ''}${bumpConf.vote?.channelId ? ' · vote' : ''}`
+        : '*Non configuré*';
+
     const inviteConf = config.inviteTracker ?? {};
     const invitePartners = Object.keys(config.invitePartners ?? {}).length;
     const inviteLine = inviteConf.forumChannelId
@@ -107,7 +113,8 @@ function homePanel(guild) {
         `🎭  **Rôles automatiques** · *Bientôt disponible*\n` +
         `🏅  **Rôles-Réactions** · *Bientôt disponible*\n` +
         `🚩  **Signalements** · *Bientôt disponible*\n` +
-        `🔗  **Invite Logger** · ${inviteLine}`
+        `🔗  **Invite Logger** · ${inviteLine}\n` +
+        `📣  **Bump & Reminders** · ${bumpLine}`
      ))
      .addSeparatorComponents(sep())
      .addActionRowComponents(linksRow());
@@ -207,6 +214,16 @@ function logsPanel(guild) {
     };
 }
 
+// ─── Bump & Reminders ─────────────────────────────────────────────────────────
+
+function bumpPanel(guild) {
+    const { buildBumpPanel } = require('../interactions/buttons_bump');
+    return {
+        components: [buildBumpPanel(guild), homeButton()],
+        flags: Flags.CV2_Ephemeral,
+    };
+}
+
 // ─── Invite Logger ────────────────────────────────────────────────────────────
 
 function invitesPanel(guild) {
@@ -254,6 +271,7 @@ function buildConfigMessage(module = 'home', guild = null) {
     if (module === 'welcome')         return welcomePanel(guild);
     if (module === 'logs')            return logsPanel(guild);
     if (module === 'invites')         return invitesPanel(guild);
+    if (module === 'bump')            return bumpPanel(guild);
     if (module === 'tickets')         return ticketsPanel(guild);
     return unavailablePanel(module, guild);
 }

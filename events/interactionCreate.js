@@ -94,6 +94,20 @@ module.exports = {
                     return;
                 }
 
+                // Bump reminders
+                if (interaction.customId.startsWith('bump_')) {
+                    const { handleButtonBump } = require('../interactions/buttons_bump');
+                    await handleButtonBump(interaction);
+                    return;
+                }
+
+                // Welcome editor (message général)
+                if (interaction.customId.startsWith('wgen_')) {
+                    const { handleButtonWelcomeEditor } = require('../interactions/buttons_welcome_editor');
+                    await handleButtonWelcomeEditor(interaction);
+                    return;
+                }
+
                 // Invite tracker
                 if (interaction.customId.startsWith('inv_')) {
                     const { handleButtonInvites } = require('../interactions/buttons_invites');
@@ -124,6 +138,18 @@ module.exports = {
                 if (interaction.customId.startsWith('welcome_')) {
                     const { handleModalWelcome } = require('../interactions/buttons_welcome');
                     await handleModalWelcome(interaction);
+                    return;
+                }
+
+                if (interaction.customId.startsWith('wgen_')) {
+                    const { handleModalWelcomeEditor } = require('../interactions/buttons_welcome_editor');
+                    await handleModalWelcomeEditor(interaction);
+                    return;
+                }
+
+                if (interaction.customId.startsWith('inv_modal')) {
+                    const { handleModalInvites } = require('../interactions/buttons_invites');
+                    await handleModalInvites(interaction);
                     return;
                 }
                 const { handleModal } = require('../interactions/modals');
