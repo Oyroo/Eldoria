@@ -3,7 +3,7 @@ const { loadConfig }   = require('../utils/config');
 const { load: loadTickets } = require('../utils/tickets');
 const { startScheduler }    = require('../utils/meteo');
 const { initInviteCache }   = require('../utils/inviteTracker');
-const { restoreTimers }     = require('../utils/bumpReminder');
+const { restoreReminders }     = require('../utils/bumpReminder');
 
 module.exports = {
     name: Events.ClientReady,
@@ -13,7 +13,7 @@ module.exports = {
         await loadConfig();
         loadTickets();
         startScheduler(client);
-        restoreTimers(client);
+        restoreReminders(client);
         // Init cache invitations pour toutes les guilds
         for (const guild of client.guilds.cache.values()) {
             await initInviteCache(guild);
