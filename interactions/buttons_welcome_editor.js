@@ -106,7 +106,7 @@ async function handleButtonWelcomeEditor(interaction) {
 
     if (id === 'wgen_back') {
         await interaction.deferUpdate();
-        const { buildWelcomePanel } = require('./buttons_welcome');
+        const { buildWelcomePanel } = require('./buttons_welcome'); // ✅ import correct
         return interaction.editReply({ components: [buildWelcomePanel(interaction.guild)] });
     }
 }
@@ -128,4 +128,5 @@ async function handleModalWelcomeEditor(interaction) {
     }
 }
 
+// ✅ EXPORTS
 module.exports = { buildCustomMessage, buildGeneralMsgEditor, handleButtonWelcomeEditor, handleModalWelcomeEditor };

@@ -114,7 +114,7 @@ async function handleModalWelcome(interaction) {
     // (vide pour l’instant mais obligatoire pour éviter l’erreur)
 }
 
-// ✅ EXPORT FIX (LE PLUS IMPORTANT)
+// ✅ EXPORT FIX (OBLIGATOIRE)
 module.exports = {
     handleButtonWelcome,
     handleModalWelcome,
