@@ -9,7 +9,6 @@ const { config, saveConfig } = require('../utils/config');
 const CV2 = 1 << 15;
 
 // ─── Construire le message CV2 depuis la config ───────────────────────────────
-
 function buildCustomMessage(type, member) {
     const key = type === 'general' ? 'generalMsg' : 'departMsg';
     const msg = config.welcome?.[key] ?? {};
@@ -40,7 +39,6 @@ function buildCustomMessage(type, member) {
 }
 
 // ─── Panel éditeur ───────────────────────────────────────────────────────────
-
 function buildGeneralMsgEditor(guild, type) {
     const key = type === 'general' ? 'generalMsg' : 'departMsg';
     const label = type === 'general' ? 'message d\'accueil général' : 'message de départ';
@@ -69,15 +67,16 @@ function buildGeneralMsgEditor(guild, type) {
 }
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
-
 async function handleButtonWelcomeEditor(interaction) {
     const id = interaction.customId;
 
+    // Modifier le texte
     if (id.startsWith('wgen_edit:')) {
         const type = id.split(':')[1];
         const key = type === 'general' ? 'generalMsg' : 'departMsg';
         const msg = config.welcome?.[key] ?? {};
         const label = type === 'general' ? 'Message d\'accueil général' : 'Message de départ';
+
         const modal = new ModalBuilder().setCustomId(`wgen_modal:${type}`).setTitle(label);
         modal.addComponents(
             new ActionRowBuilder().addComponents(
@@ -90,26 +89,26 @@ async function handleButtonWelcomeEditor(interaction) {
                 new TextInputBuilder().setCustomId('footer').setLabel('Pied de page (optionnel)').setStyle(TextInputStyle.Short).setRequired(false).setValue(msg.footer ?? '').setMaxLength(120)
             ),
         );
+
         return interaction.showModal(modal);
     }
 
+    // Aperçu ephemeral
     if (id.startsWith('wgen_preview:')) {
-        await interaction.deferReply({ flags: EPHEMERAL });
+        await interaction.deferReply({ ephemeral: true });
         const type = id.split(':')[1];
         const c = buildCustomMessage(type, null);
-        return interaction.editReply({ components: [c], flags: CV2 });
+        return interaction.followUp({ components: [c], ephemeral: true, flags: CV2 });
     }
 
+    // Retour
     if (id === 'wgen_back') {
-        await interaction.deferUpdate();
-        const { buildWelcomePanel } = require('./buttons_welcome');
-        return interaction.editReply({ components: [buildWelcomePanel(interaction.guild)], flags: CV2 });
+        await interaction.update({ components: [require('./buttons_welcome').buildWelcomePanel(interaction.guild)], flags: CV2 });
     }
 }
 
 async function handleModalWelcomeEditor(interaction) {
     if (interaction.customId.startsWith('wgen_modal:')) {
-        await interaction.deferUpdate();
         const type = interaction.customId.split(':')[1];
         const key = type === 'general' ? 'generalMsg' : 'departMsg';
         const title = interaction.fields.getTextInputValue('title')?.trim() || null;
@@ -120,7 +119,7 @@ async function handleModalWelcomeEditor(interaction) {
         config.welcome[key] = { title, body, footer, accentColor: type === 'general' ? 0xd4a853 : 0x95a5a6 };
         saveConfig();
 
-        return interaction.editReply({ components: [buildGeneralMsgEditor(interaction.guild, type)], flags: CV2 });
+        return interaction.update({ components: [buildGeneralMsgEditor(interaction.guild, type)], flags: CV2 });
     }
 }
 

@@ -23,19 +23,14 @@ function buildInvitesPanel(guild) {
 
     const c = new ContainerBuilder().setAccentColor(0xd4a853);
     const section = new SectionBuilder().addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-            `# 🔗  Invite Logger\n-# Suivi des invitations et sources de recrutement.`
-        )
+        new TextDisplayBuilder().setContent(`# 🔗  Invite Logger\n-# Suivi des invitations et sources de recrutement.`)
     );
     if (icon) section.setThumbnailAccessory(new ThumbnailBuilder().setURL(icon));
     c.addSectionComponents(section);
 
     c.addSeparatorComponents(sep())
      .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-        `### Configuration\n` +
-        `📂  **Salon forum** · ${forumStr}\n` +
-        `🌐  **Invitation Aowyn** · ${aowynStr}\n` +
-        `📋  **Invitation Disboard** · ${disStr}`
+        `### Configuration\n📂  **Salon forum** · ${forumStr}\n🌐  **Invitation Aowyn** · ${aowynStr}\n📋  **Invitation Disboard** · ${disStr}`
      ))
      .addActionRowComponents(new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId('inv_setforum').setLabel('Salon forum').setEmoji('📂').setStyle(ButtonStyle.Secondary),
@@ -46,15 +41,11 @@ function buildInvitesPanel(guild) {
      .addTextDisplayComponents(new TextDisplayBuilder().setContent(`### Partenaires (${partners.length})`));
 
     if (partners.length === 0) {
-        c.addTextDisplayComponents(new TextDisplayBuilder().setContent(
-            `> *Aucun partenaire. Clique sur **Ajouter** pour en créer un.*`
-        ));
+        c.addTextDisplayComponents(new TextDisplayBuilder().setContent(`> *Aucun partenaire. Clique sur **Ajouter** pour en créer un.*`));
     } else {
         for (const p of partners) {
             c.addSeparatorComponents(thinSep())
-             .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                `🤝  **${p.name}** · \`${p.code}\`\n-# ${p.description || 'Aucune description'}`
-             ))
+             .addTextDisplayComponents(new TextDisplayBuilder().setContent(`🤝  **${p.name}** · \`${p.code}\`\n-# ${p.description || 'Aucune description'}`))
              .addActionRowComponents(new ActionRowBuilder().addComponents(
                 new ButtonBuilder().setCustomId(`inv_delete:${p.id}`).setLabel('Supprimer').setEmoji('🗑️').setStyle(ButtonStyle.Danger),
              ));
@@ -75,9 +66,7 @@ function buildDeleteConfirm(partner) {
             `# 🗑️  Supprimer ce partenaire ?\n-# L'invitation Discord associée sera également supprimée.`
         ))
         .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2))
-        .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-            `**${partner.name}** · \`${partner.code}\`\n-# ${partner.description || 'Aucune description'}`
-        ))
+        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`**${partner.name}** · \`${partner.code}\`\n-# ${partner.description || 'Aucune description'}`))
         .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2))
         .addActionRowComponents(new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId(`inv_delete_confirm:${partner.id}`).setLabel('Supprimer définitivement').setEmoji('🗑️').setStyle(ButtonStyle.Danger),
@@ -88,6 +77,7 @@ function buildDeleteConfirm(partner) {
 async function handleButtonInvites(interaction) {
     const id = interaction.customId;
 
+    // Ajouter un partenaire
     if (id === 'inv_add') {
         const modal = new ModalBuilder().setCustomId('inv_modal_add').setTitle('Nouveau partenaire');
         modal.addComponents(
@@ -102,7 +92,7 @@ async function handleButtonInvites(interaction) {
     }
 
     const awaitPanel = async (type, emoji, title, hint) => {
-        await interaction.deferUpdate();
+        await interaction.update({ components: [] }); // juste pour defer l'update
         pending[interaction.user.id] = { type, token: interaction.token, appId: interaction.client.application.id, guildId: interaction.guildId };
         const c = new ContainerBuilder().setAccentColor(0x5865f2)
             .addTextDisplayComponents(new TextDisplayBuilder().setContent(`# ${emoji}  ${title}\n-# En attente de ta réponse…`))
@@ -111,7 +101,7 @@ async function handleButtonInvites(interaction) {
         const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId('inv_cancel').setLabel('Annuler').setEmoji('✖️').setStyle(ButtonStyle.Secondary)
         );
-        return interaction.editReply({ components: [c, row] });
+        return interaction.followUp({ components: [c, row], ephemeral: true });
     };
 
     if (id === 'inv_setforum')    return awaitPanel('inv_forum',    '📂', 'Salon forum',          'Envoie le **#salon forum** ou son **ID**.');
@@ -119,14 +109,12 @@ async function handleButtonInvites(interaction) {
     if (id === 'inv_setdisboard') return awaitPanel('inv_disboard', '📋', 'Code Disboard',         'Envoie le **code** de l\'invitation Disboard (ex: `xyz789`).');
 
     if (id.startsWith('inv_delete:')) {
-        await interaction.deferUpdate();
         const partner = config.invitePartners?.[id.split(':')[1]];
-        if (!partner) return interaction.editReply({ components: [buildInvitesPanel(interaction.guild)] });
-        return interaction.editReply({ components: [buildDeleteConfirm(partner)] });
+        if (!partner) return interaction.update({ components: [buildInvitesPanel(interaction.guild)] });
+        return interaction.update({ components: [buildDeleteConfirm(partner)] });
     }
 
     if (id.startsWith('inv_delete_confirm:')) {
-        await interaction.deferUpdate();
         const pid = id.split(':')[1];
         const partner = config.invitePartners?.[pid];
         if (partner) {
@@ -134,19 +122,17 @@ async function handleButtonInvites(interaction) {
             delete config.invitePartners[pid];
             saveConfig();
         }
-        return interaction.editReply({ components: [buildInvitesPanel(interaction.guild)] });
+        return interaction.update({ components: [buildInvitesPanel(interaction.guild)] });
     }
 
     if (id === 'inv_cancel') {
-        await interaction.deferUpdate();
         delete pending[interaction.user.id];
-        return interaction.editReply({ components: [buildInvitesPanel(interaction.guild)] });
+        return interaction.update({ components: [buildInvitesPanel(interaction.guild)] });
     }
 }
 
 async function handleModalInvites(interaction) {
     if (interaction.customId === 'inv_modal_add') {
-        await interaction.deferUpdate();
         const nom         = interaction.fields.getTextInputValue('name').trim();
         const description = interaction.fields.getTextInputValue('description')?.trim() ?? '';
         try {
@@ -156,7 +142,8 @@ async function handleModalInvites(interaction) {
             config.invitePartners[pid] = { id: pid, name: nom, description, code: invite.code, url: invite.url, channelId: interaction.channelId, createdAt: Date.now(), uses: 0 };
             saveConfig();
         } catch (err) { console.error('inv_modal_add:', err.message); }
-        return interaction.editReply({ components: [buildInvitesPanel(interaction.guild)] });
+
+        return interaction.update({ components: [buildInvitesPanel(interaction.guild)] });
     }
 }
 
