@@ -53,7 +53,7 @@ module.exports = {
                     await interaction.deferUpdate();
                     const { buildConfigMessage } = require('../utils/configPanels');
                     const msg = buildConfigMessage('home', interaction.guild);
-                    return interaction.editReply({ components: msg.components });
+                    return interaction.update({ components: msg.components });
                 }
 
                 // Navigation /config-rp
@@ -61,7 +61,7 @@ module.exports = {
                     await interaction.deferUpdate();
                     const { buildConfigRpMessage } = require('../utils/configRpPanels');
                     const msg = buildConfigRpMessage('home', interaction.guild);
-                    return interaction.editReply({ components: msg.components });
+                    return interaction.update({ components: msg.components });
                 }
 
                 // Ouvrir ticket-config depuis /config
@@ -69,7 +69,7 @@ module.exports = {
                     await interaction.deferUpdate();
                     const { mainPanel } = require('../utils/builders');
                     const icon = interaction.guild?.iconURL({ size: 256, extension: 'png' }) ?? null;
-                    return interaction.editReply({ components: mainPanel(icon) });
+                    return interaction.update({ components: mainPanel(icon) });
                 }
 
                 // Retour vers /config tickets depuis ticket-config
@@ -77,7 +77,7 @@ module.exports = {
                     await interaction.deferUpdate();
                     const { buildConfigMessage } = require('../utils/configPanels');
                     const msg = buildConfigMessage('tickets', interaction.guild);
-                    return interaction.editReply({ components: msg.components });
+                    return interaction.update({ components: msg.components });
                 }
 
                 // Météo
