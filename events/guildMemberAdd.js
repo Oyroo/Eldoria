@@ -2,7 +2,7 @@ const { Events, ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, MediaGal
 const { config }                = require('../utils/config');
 const { generateWelcomeBanner } = require('../utils/welcomeImage');
 const { logWelcome }            = require('../utils/botLogger');
-const { buildGeneralMessage }   = require('../interactions/buttons_welcome_editor');
+const { buildCustomMessage }    = require('../interactions/buttons_welcome_editor');
 const { detectUsedInvite, getPartnerByCode } = require('../utils/inviteTracker');
 const { logJoin }               = require('../utils/inviteForum');
 
@@ -99,7 +99,7 @@ module.exports = {
                 try {
                     const genChannel = await member.guild.channels.fetch(wc.generalChannelId);
                     if (genChannel) {
-                        const genMsg = buildGeneralMessage(member);
+                        const genMsg = buildCustomMessage('general', member);
                         await genChannel.send({ components: [genMsg], flags: CV2 });
                     }
                 } catch (genErr) {

@@ -141,7 +141,7 @@ module.exports = {
                     return;
                 }
 
-                if (interaction.customId.startsWith('wgen_')) {
+                if (interaction.customId.startsWith('wgen_modal')) {
                     const { handleModalWelcomeEditor } = require('../interactions/buttons_welcome_editor');
                     await handleModalWelcomeEditor(interaction);
                     return;

@@ -46,6 +46,50 @@ module.exports = {
             return;
         }
 
+        // welcome depart channel
+        if (p.type === 'welcome_dep_channel') {
+            try { await msg.delete(); } catch {}
+            if (msg.content.trim().toLowerCase() === 'annuler') {
+                delete pending[msg.author.id];
+                const { buildWelcomePanel } = require('../interactions/buttons_welcome');
+                await patch(p.token, p.appId, [buildWelcomePanel(msg.guild)]);
+                return;
+            }
+            delete pending[msg.author.id];
+            const val = msg.content.trim().replace(/[<#>]/g, '').trim();
+            try {
+                await msg.guild.channels.fetch(val);
+                if (!config.welcome) config.welcome = {};
+                config.welcome.departChannelId = val;
+                saveConfig();
+            } catch {}
+            const { buildWelcomePanel } = require('../interactions/buttons_welcome');
+            await patch(p.token, p.appId, [buildWelcomePanel(msg.guild)]);
+            return;
+        }
+
+        // welcome depart channel
+        if (p.type === 'welcome_dep_channel') {
+            try { await msg.delete(); } catch {}
+            if (msg.content.trim().toLowerCase() === 'annuler') {
+                delete pending[msg.author.id];
+                const { buildWelcomePanel } = require('../interactions/buttons_welcome');
+                await patch(p.token, p.appId, [buildWelcomePanel(msg.guild)]);
+                return;
+            }
+            delete pending[msg.author.id];
+            const val = msg.content.trim().replace(/[<#>]/g, '').trim();
+            try {
+                await msg.guild.channels.fetch(val);
+                if (!config.welcome) config.welcome = {};
+                config.welcome.departChannelId = val;
+                saveConfig();
+            } catch {}
+            const { buildWelcomePanel } = require('../interactions/buttons_welcome');
+            await patch(p.token, p.appId, [buildWelcomePanel(msg.guild)]);
+            return;
+        }
+
         // welcome general channel
         if (p.type === 'welcome_gen_channel') {
             try { await msg.delete(); } catch {}
