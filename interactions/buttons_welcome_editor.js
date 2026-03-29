@@ -70,13 +70,11 @@ function buildGeneralMsgEditor(guild, type) {
 async function handleButtonWelcomeEditor(interaction) {
     const id = interaction.customId;
 
-    // Modifier le texte
     if (id.startsWith('wgen_edit:')) {
         const type = id.split(':')[1];
         const key = type === 'general' ? 'generalMsg' : 'departMsg';
         const msg = config.welcome?.[key] ?? {};
         const label = type === 'general' ? 'Message d\'accueil général' : 'Message de départ';
-
         const modal = new ModalBuilder().setCustomId(`wgen_modal:${type}`).setTitle(label);
         modal.addComponents(
             new ActionRowBuilder().addComponents(
@@ -89,21 +87,19 @@ async function handleButtonWelcomeEditor(interaction) {
                 new TextInputBuilder().setCustomId('footer').setLabel('Pied de page (optionnel)').setStyle(TextInputStyle.Short).setRequired(false).setValue(msg.footer ?? '').setMaxLength(120)
             ),
         );
-
         return interaction.showModal(modal);
     }
 
-    // Aperçu ephemeral
     if (id.startsWith('wgen_preview:')) {
         await interaction.deferReply({ ephemeral: true });
         const type = id.split(':')[1];
         const c = buildCustomMessage(type, null);
-        return interaction.followUp({ components: [c], ephemeral: true, flags: CV2 });
+        return interaction.followUp({ components: [c] });
     }
 
-    // Retour
     if (id === 'wgen_back') {
-        await interaction.update({ components: [require('./buttons_welcome').buildWelcomePanel(interaction.guild)], flags: CV2 });
+        const { buildWelcomePanel } = require('./buttons_welcome');
+        return interaction.update({ components: [buildWelcomePanel(interaction.guild)] });
     }
 }
 
@@ -119,7 +115,7 @@ async function handleModalWelcomeEditor(interaction) {
         config.welcome[key] = { title, body, footer, accentColor: type === 'general' ? 0xd4a853 : 0x95a5a6 };
         saveConfig();
 
-        return interaction.update({ components: [buildGeneralMsgEditor(interaction.guild, type)], flags: CV2 });
+        return interaction.update({ components: [buildGeneralMsgEditor(interaction.guild, type)] });
     }
 }
 
