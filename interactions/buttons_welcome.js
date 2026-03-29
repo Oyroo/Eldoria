@@ -6,8 +6,6 @@ const {
 } = require('discord.js');
 
 const { config, saveConfig } = require('../utils/config');
-const { pending } = require('../utils/pending');
-const { generateWelcomeBanner } = require('../utils/welcomeImage');
 
 const CV2 = 1 << 15;
 const EPHEMERAL = 64;
@@ -26,54 +24,75 @@ function buildWelcomePanel(guild) {
         ? `\`${wc.message.slice(0, 60)}${wc.message.length > 60 ? '…' : ''}\``
         : '*Aucun*';
 
-    const genActive = wc?.generalActive ?? false;
-    const genChan = wc?.generalChannelId ? `<#${wc.generalChannelId}>` : '*Non défini*';
+    const genActive = wc.generalActive ?? false;
+    const genChan = wc.generalChannelId ? `<#${wc.generalChannelId}>` : '*Non défini*';
 
-    const depActive = wc?.departActive ?? false;
-    const depChan = wc?.departChannelId ? `<#${wc.departChannelId}>` : '*Non défini*';
+    const depActive = wc.departActive ?? false;
+    const depChan = wc.departChannelId ? `<#${wc.departChannelId}>` : '*Non défini*';
 
     const c = new ContainerBuilder().setAccentColor(0xd4a853);
 
+    // Section principale
     const section = new SectionBuilder().addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-            `# 🚪  Arrivées & départs\n-# Messages automatiques.`
+            `# 🚪  Arrivées & départs\n-# Messages de bienvenue et de départ automatiques.`
         )
     );
-
     if (icon) section.setThumbnailAccessory(new ThumbnailBuilder().setURL(icon));
     c.addSectionComponents(section);
 
-    // Banner
+    // ── Banner
     c.addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2))
      .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-        `### 🖼️ Banner\n${active ? '🟢' : '🔴'} ${active ? 'Actif' : 'Inactif'}\n📢 ${channelStr}`
+        `### 🖼️  Banner de bienvenue\n${active ? '🟢 Actif' : '🔴 Inactif'}\n📢 ${channelStr}\n🎭 ${roleStr}\n💬 ${msgStr}`
      ))
      .addActionRowComponents(new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId('welcome_toggle')
             .setLabel(active ? 'Désactiver' : 'Activer')
+            .setEmoji(active ? '🔴' : '🟢')
             .setStyle(active ? ButtonStyle.Danger : ButtonStyle.Success),
+        new ButtonBuilder().setCustomId('welcome_setchannel')
+            .setLabel('Salon').setEmoji('📢').setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId('welcome_setrole')
+            .setLabel('Rôle').setEmoji('🎭').setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId('welcome_setmessage')
+            .setLabel('Message').setEmoji('💬').setStyle(ButtonStyle.Secondary),
+     ))
+     .addActionRowComponents(new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId('welcome_preview')
+            .setLabel('Aperçu banner').setEmoji('👁️').setStyle(ButtonStyle.Secondary),
      ));
 
-    // Général
+    // ── Général
     c.addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2))
      .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-        `### 💬 Général\n${genActive ? '🟢' : '🔴'} ${genActive ? 'Actif' : 'Inactif'}\n📢 ${genChan}`
+        `### 💬  Message d'accueil général\n${genActive ? '🟢 Actif' : '🔴 Inactif'}\n📢 ${genChan}`
      ))
      .addActionRowComponents(new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId('welcome_gen_toggle')
             .setLabel(genActive ? 'Désactiver' : 'Activer')
+            .setEmoji(genActive ? '🔴' : '🟢')
             .setStyle(genActive ? ButtonStyle.Danger : ButtonStyle.Success),
+        new ButtonBuilder().setCustomId('welcome_gen_setchannel')
+            .setLabel('Salon').setEmoji('📢').setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId('welcome_gen_edit')
+            .setLabel('Modifier le message CV2').setEmoji('✏️').setStyle(ButtonStyle.Primary),
      ));
 
-    // Départ
+    // ── Départ
     c.addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(2))
      .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-        `### 👋 Départ\n${depActive ? '🟢' : '🔴'} ${depActive ? 'Actif' : 'Inactif'}\n📢 ${depChan}`
+        `### 👋  Message de départ\n${depActive ? '🟢 Actif' : '🔴 Inactif'}\n📢 ${depChan}`
      ))
      .addActionRowComponents(new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId('welcome_dep_toggle')
             .setLabel(depActive ? 'Désactiver' : 'Activer')
+            .setEmoji(depActive ? '🔴' : '🟢')
             .setStyle(depActive ? ButtonStyle.Danger : ButtonStyle.Success),
+        new ButtonBuilder().setCustomId('welcome_dep_setchannel')
+            .setLabel('Salon').setEmoji('📢').setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId('welcome_dep_edit')
+            .setLabel('Modifier le message CV2').setEmoji('✏️').setStyle(ButtonStyle.Primary),
      ));
 
     return c;
@@ -83,40 +102,38 @@ function buildWelcomePanel(guild) {
 
 async function handleButtonWelcome(interaction) {
     const id = interaction.customId;
-
     if (!config.welcome) config.welcome = {};
 
     if (id === 'welcome_toggle') {
         await interaction.deferUpdate();
         config.welcome.active = !config.welcome.active;
         saveConfig();
-        return interaction.editReply({ components: [buildWelcomePanel(interaction.guild)] });
+        return interaction.editReply({ components: [buildWelcomePanel(interaction.guild)], flags: CV2 });
     }
 
     if (id === 'welcome_gen_toggle') {
         await interaction.deferUpdate();
         config.welcome.generalActive = !config.welcome.generalActive;
         saveConfig();
-        return interaction.editReply({ components: [buildWelcomePanel(interaction.guild)] });
+        return interaction.editReply({ components: [buildWelcomePanel(interaction.guild)], flags: CV2 });
     }
 
     if (id === 'welcome_dep_toggle') {
         await interaction.deferUpdate();
         config.welcome.departActive = !config.welcome.departActive;
         saveConfig();
-        return interaction.editReply({ components: [buildWelcomePanel(interaction.guild)] });
+        return interaction.editReply({ components: [buildWelcomePanel(interaction.guild)], flags: CV2 });
     }
 }
 
 // ─── MODAL HANDLER ───────────────────────────────────────────────────────────
 
 async function handleModalWelcome(interaction) {
-    // (vide pour l’instant mais obligatoire pour éviter l’erreur)
+    // vide pour l’instant
 }
 
-// ✅ EXPORT FIX (OBLIGATOIRE)
 module.exports = {
     handleButtonWelcome,
     handleModalWelcome,
-    buildWelcomePanel
+    buildWelcomePanel,
 };
